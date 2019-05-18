@@ -150,23 +150,8 @@ export default {
     processMessageList () {
       this.messageList.push({
         type: 'text',
-        author: 'support',
-        // author: this.participants[0].name,
-        data: { text: this.threadData.data.attributes.initial_question },
-        suggestions: {
-          data: [{
-            text: 'Yes',
-            name: 'Yes1',
-            value: 'Yes2',
-            parent: '0'
-          },
-          {
-            text: 'NO',
-            name: 'NO1',
-            value: 'NO2',
-            parent: '0'
-          }],
-          multiple: true
+        author: this.participants[0].id,
+        data: { text: this.threadData.data.attributes.initial_question
         }
       })
 
@@ -190,48 +175,76 @@ export default {
         this.getRating(this.$route.params.id)
       }
     },
-    onMessageWasSent (msg) {
+    async onMessageWasSent (msg) {
+      console.log(msg, this.participants)
       this.messageList.push(msg)
 
-      // if (this.step == 0) {
-      //   const initialResponseMessage = {
-      //     author: 'support',
-      //     data: {
-      //       text: this.threadData.data.attributes.initial_response
-      //     },
-      //     type: 'text'
-      //   }
+      if (this.step == 0) {
+        const initialResponseMessage = {
+          author: this.participants[0].id,
+          data: {
+            text: this.threadData.data.attributes.initial_response
+          },
+          type: 'text'
+        }
 
-      //   this.messageList.push(initialResponseMessage)
-      // } else {
-      //   this.assessmentParams[this.threadData.included[this.step-1].attributes.topic] = msg.data.text
-      // }
+        this.messageList.push(initialResponseMessage)
+      } else {
+        this.assessmentParams[this.threadData.included[this.step-1].attributes.topic] = {
+          id: msg.data.id,
+          name: msg.data.text
+        }
+      }
 
-      // // add a message in channel when chatbot asking a question
-      // const questionMessage = {
-      //   author: 'support',
-      //   data: {
-      //     text: this.threadData.included[this.step].attributes.question
-      //   },
-      //   type: 'text',
-      //   suggestions: this.getSuggestionListFromProps(this.suggestions.data[this.threadData.included[this.step].attributes.topic])
-      // }
+      // add a message in channel when chatbot asking a question
+      const questionMessage = {
+        author: this.participants[0].id,
+        data: {
+          text: this.threadData.included[this.step].attributes.question
+        },
+        type: 'text',
+        suggestions: this.getSuggestionListFromProps(this.suggestions.data[this.threadData.included[this.step].attributes.topic])
+      }
 
-      // this.messageList.push(questionMessage)
-      // this.step = this.step + 1
-      
+      this.messageList.push(questionMessage)
+
+      if (this.step < this.threadData.included.length) {
+        this.step = this.step + 1
+      } else {
+        // const prediction = await this.assessment.getPredictons({
+        //   message_thread: 4,
+        //   target_individual: form.target_individual,
+        //   review_by_dentist: form.review_by_dentist,
+        //   review_by_algorithm: form.review_by_algorithm,
+        //   gender: form.gender,
+        //   body_structure: form.body_structure,
+        //   age_group: form.age_group,
+        //   symptoms: JSON.stringify(form.symptoms),
+        //   pain_level: form.pain_level
+        // })
+      }
+
     },
-    getSuggestionListFromProps (data) {
-      // let res = []
-      // try {
-      //   data.forEach(item => {
-      //     res.push(item.attributes.name)
-      //   })
-      // } catch (e) {
-      //   return []
-      // }
+    getSuggestionListFromProps (props) {
+      let suggestions = {}
 
-      // return res
+      let data = []
+
+      if (props.length > 0) {
+        props.forEach(item => {
+          data.push({
+            name: item.attributes.name,
+            id: item.id,
+            parent: '0'
+          })
+        })
+
+        suggestions.data = data
+        suggestions.multiple = true
+      }
+
+      console.log('suggestions: ', suggestions)
+      return suggestions
     },
     onUserRatingSent (score) {
       this.assessment.submitRating(score, this.assessmentId).then(res => {
@@ -254,6 +267,9 @@ export default {
     },
     closeChat () {
       this.isChatOpen = false
+    },
+    saveMessage (msg) {
+      // placeholder
     }
   }
 }

@@ -151,7 +151,7 @@ export default {
 }
 </script>
 
-<style>
+<style lang="scss">
 .sc-user-input {
   min-height: 55px;
   margin: 0px;
@@ -204,16 +204,20 @@ export default {
 
 .sc-user-input--button:first-of-type {
   width: 40px;
+  background: none;
 }
 
 .sc-user-input--button {
-  width: 30px;
-  height: 55px;
+  width: 50px !important;
+  height: 50px !important;
   margin-left: 2px;
   margin-right: 2px;
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
+  border-radius: 50%;
+  background-color: $light-blue;
 }
 
 .sc-user-input.active {

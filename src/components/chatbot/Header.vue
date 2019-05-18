@@ -1,5 +1,5 @@
 <template>
-  <div class="sc-header" :style="{background: colors.header.bg, color: colors.header.text}">
+  <div class="sc-header">
     <img class="sc-header--img" :src="imageUrl" alt="" v-if="imageUrl" />
     <div class="sc-header--title"> {{title}} </div>
     <div class="sc-header--close-button" @click="onClose">
@@ -40,8 +40,10 @@ export default {
   }
 }
 </script>
-<style scoped>
+<style scoped lang="scss">
 .sc-header {
+  background-color: $light-blue;
+  color: #fff;
   min-height: 75px;
   border-top-left-radius: 9px;
   border-top-right-radius: 9px;

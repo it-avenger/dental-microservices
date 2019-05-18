@@ -52,7 +52,7 @@ export default {
       return profile || { imageUrl: '', name: '' }
     },
     chatImageUrl (author) {
-      return this.profile(author).imageUrl
+      return this.profile(author).name == 'chatbot' ? '/static/img/double-heart-blue.svg' : this.profile(author).imageUrl
     },
     authorName (author) {
       return this.profile(author).name
