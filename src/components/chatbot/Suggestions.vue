@@ -39,14 +39,11 @@ export default {
       required: true
     }
   },
-  updated () {
-    console.log(this.suggestionData)
-  },
   watch: {
     suggestions: function () {
       console.log(this.suggestions, '+++')
       let suggestions = this.suggestions
-      debugger
+
       this.multiple = false
       if (suggestions && suggestions.data) {
         this.suggestionData = suggestions.data.filter(s => {
@@ -59,8 +56,9 @@ export default {
         if (this.suggestions.multiple) {
           this.multiple = true
         }
-        this.baseStyles = { borderColor: this.colors.sentMessage.bg, backgroundColor: this.colors.sentMessage.bg, color: this.colors.sentMessage.text }
-        this.selectedStyles = { borderColor: this.colors.sentMessage.bg, backgroundColor: this.colors.selectedMessage.bg, color: this.colors.selectedMessage.text }
+
+        this.baseStyles = { borderColor: '#6CB4D9', backgroundColor: '#fff', color: '#6CB4D9' }
+        this.selectedStyles = { borderColor: '#6CB4D9', backgroundColor: '#6CB4D9', color: '#fff' }
       }
     }
   },
@@ -124,5 +122,7 @@ export default {
   font-size: 14px;
   background: inherit;
   cursor: pointer;
+  border-radius: 4.8px;
+  color: #fff;
 }
 </style>

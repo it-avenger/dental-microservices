@@ -45,6 +45,8 @@ export default {
   padding: 0px;
   margin: 0px;
   outline: none;
+  margin-top: 5px;
+  margin-left: 4px;
 }
 
 .sc-user-input--send-icon-wrapper:focus {

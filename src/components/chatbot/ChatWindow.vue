@@ -128,9 +128,6 @@ export default {
       showUserList: false
     }
   },
-  mounted () {
-    console.log('chatbo= ' , this.messages)
-  },
   computed: {
     messages () {
       let messages = this.messageList
@@ -143,12 +140,6 @@ export default {
       this.showUserList = showUserList
     },
     getSuggestions () {
-
-      try {
-        console.log('=', this.messages[this.messages.length - 1].suggestions)
-      } catch (e) {
-        
-      }
       return this.messages.length > 0 ? this.messages[this.messages.length - 1].suggestions : {}
     }
   }

@@ -86,7 +86,7 @@ export default {
   },
   mounted () {
     this.getAssessments()
-    // this.fetchSuggestions()
+    this.fetchSuggestions()
   },
   data: () => ({
     assessment: new Assessment(),
