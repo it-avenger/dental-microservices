@@ -35,7 +35,7 @@
                       <v-layout row>
                         <v-flex
                           xs2
-                          @click.stop="toRoute('view', {id: card.id})"
+                          @click.stop="toRoute('view', {id: card.id, query: card.attributes})"
                           style="cursor: pointer"
                         >
                           <v-img
@@ -49,7 +49,7 @@
                         <v-flex xs10>
                           <div
                             class="title"
-                            @click.stop="toRoute('view', {id: card.id})"
+                            @click.stop="toRoute('view', {id: card.id, query:card.attributes})"
                             style="cursor: pointer"
                           >
                             {{dateForrmat(card.attributes.created_time)}} <br>
@@ -119,6 +119,7 @@ export default {
           this.msgData.data = res.data
           this.msgData.page = res.meta.pagination.page
           this.msgData.pages = res.meta.pagination.pages
+          console.log(this.msgData)
         }
       })
     },

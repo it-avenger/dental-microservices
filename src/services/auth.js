@@ -1,6 +1,5 @@
 class Auth {
   login(username, password) {
-    console.log('sdfsdfsdfsd');
     const payload = JSON.stringify({
       data: {
         type: 'ObtainJSONWebToken',

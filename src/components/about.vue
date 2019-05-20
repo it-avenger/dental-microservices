@@ -34,9 +34,6 @@ export default {
   name: 'Article',
   created () {
   },
-  mounted () {
-    // console.log(this.$route.params)
-  },
   data: () => ({
     show: false,
     article: {
