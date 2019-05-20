@@ -108,23 +108,10 @@ class Assessment {
 
   getPredictons(attributes) {
     return new Promise((resolve, reject) => {
-      const payload = JSON.stringify({
-        data: {
-          type: 'assessments',
-          attributes: attributes
-          // attributes: {
-          //   message_thread: form.message_thread,
-          //   target_individual: form.target_individual,
-          //   review_by_dentist: form.review_by_dentist,
-          //   review_by_algorithm: form.review_by_algorithm,
-          //   gender: form.gender,
-          //   body_structure: form.body_structure,
-          //   age_group: form.age_group,
-          //   symptoms: JSON.stringify(form.symptoms),
-          //   pain_level: form.pain_level,
-          // },
-        },
-      });
+      const payload = {
+        type: 'assessments',
+        attributes: attributes
+      };
 
       POSTApi(`${types.BASE_URL}/chatbot-assessments/predict/`, payload)
         .then((response) => {

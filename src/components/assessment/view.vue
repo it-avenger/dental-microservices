@@ -53,12 +53,14 @@ export default {
     me: 0,
     threadData: { data: {}, included: [] },
     title: 'chatbot',
+    // threadId: this.$router.history.current.params.id || '', 
+    // query: this.$router.history.current.params.query || null,
     participants: [
       {
         id: '4',
         name: 'chatbot',
         type: 'system',
-        imageUrl: '/static/img/bot.png'
+        imageUrl: '/static/img/chat.png'
       },
       {
         id: 'me',
@@ -68,7 +70,7 @@ export default {
       }
     ],
     messageList: [],
-    titleImageUrl: 'static/img/bot.png',
+    titleImageUrl: 'static/img/double-heart.svg',
     newMessagesCount: 0,
     showTypingIndicator: '',
     alwaysScrollToBottom: true,
@@ -117,6 +119,11 @@ export default {
       'suggestions'
     ])
   },
+  beforeMount  () {
+    if (!this.$router.history.current.params.query) {
+      this.$router.history.push('/assessments')
+    }
+  },
   mounted () {
     this.getAssessment()
   },
@@ -140,6 +147,7 @@ export default {
       this.assessment.viewThread(id).then(res => {
         if (res.data && res.data.attributes) {
           this.threadData = res
+          console.log('threadData: ', res)
           this.processMessageList()
           // this.messageList.push({type: 'text', author: `Support`, data: { text: res.data.attributes.initial_question }})
         } else {
@@ -177,7 +185,7 @@ export default {
     },
     async onMessageWasSent (msg) {
       console.log(msg, this.participants)
-      this.messageList.push(msg)
+      this.saveMessage(msg)
 
       if (this.step == 0) {
         const initialResponseMessage = {
@@ -188,7 +196,7 @@ export default {
           type: 'text'
         }
 
-        this.messageList.push(initialResponseMessage)
+        this.saveMessage(msg)
       } else {
         this.assessmentParams[this.threadData.included[this.step-1].attributes.topic] = {
           id: msg.data.id,
@@ -206,31 +214,37 @@ export default {
         suggestions: this.getSuggestionListFromProps(this.suggestions.data[this.threadData.included[this.step].attributes.topic])
       }
 
-      this.messageList.push(questionMessage)
+      this.saveMessage(msg)
 
-      if (this.step < this.threadData.included.length) {
+      if (this.step < this.threadData.included.length - 1) {
         this.step = this.step + 1
       } else {
-        // const prediction = await this.assessment.getPredictons({
-        //   message_thread: 4,
-        //   target_individual: form.target_individual,
-        //   review_by_dentist: form.review_by_dentist,
-        //   review_by_algorithm: form.review_by_algorithm,
-        //   gender: form.gender,
-        //   body_structure: form.body_structure,
-        //   age_group: form.age_group,
-        //   symptoms: JSON.stringify(form.symptoms),
-        //   pain_level: form.pain_level
-        // })
+        console.log(' ********* send predic *******', this.assessmentParams)
+        const query = this.$router.history.current.params.query
+        const threadId = this.$router.history.current.params.id
+
+        const prediction = await this.assessment.getPredictons({
+          message_thread: threadId,
+          target_individual: this.assessmentParams['family-members'].name,
+          review_by_dentist: query.review_by_dentist,
+          review_by_algorithm: query.review_by_algorithm,
+          // gender: this.assessmentParams.genders.id,
+          gender: 1,
+          body_structure: this.assessmentParams['body-structures'].id,
+          age_group: this.assessmentParams['age-groups'].id,
+          symptoms: [`${this.assessmentParams.symptoms.id}`],
+          pain_level: this.assessmentParams['pain-levels'].id
+        })
+
+        console.log('=== prediction ========: ', prediction)
       }
 
     },
     getSuggestionListFromProps (props) {
       let suggestions = {}
-
       let data = []
 
-      if (props.length > 0) {
+      if (props) {
         props.forEach(item => {
           data.push({
             name: item.attributes.name,
@@ -240,10 +254,9 @@ export default {
         })
 
         suggestions.data = data
-        suggestions.multiple = true
+        suggestions.multiple = false
       }
 
-      console.log('suggestions: ', suggestions)
       return suggestions
     },
     onUserRatingSent (score) {
@@ -268,8 +281,30 @@ export default {
     closeChat () {
       this.isChatOpen = false
     },
-    saveMessage (msg) {
-      // placeholder
+    async saveMessage (msg) {
+      this.messageList.push(msg)
+
+      let sender = ''
+      let receiver = ''
+
+      if (msg.author === 'me') {
+        sender = 3
+        receiver = this.participants[0].id
+      } else {
+        sender = this.participants[0].id
+        receiver = 3
+      }
+
+      let formData = new FormData()
+      formData.append('message_text', msg.data.text)
+      formData.append('thread', this.$route.params.id)
+      formData.append('sender', sender)
+      formData.append('receiver', receiver)
+      formData.append('is_read', true)
+
+      const createResponse = await this.assessment.createMessage(formData)
+
+      console.log('== createResponse ==', createResponse)
     }
   }
 }
