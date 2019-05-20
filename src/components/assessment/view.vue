@@ -39,7 +39,7 @@
   </v-container>
 </template>
 <script>
-import { mapState } from 'vuex'
+import { mapState, mapActions } from 'vuex'
 import Assessment from '@/services/assessment'
 import ChatBot from '@/components/chatbot/Launcher.vue'
 
@@ -115,33 +115,20 @@ export default {
     assessmentParams: {}
   }),
   computed: {
-    ...mapState('assessments', [
+    ...mapState('assessements', [
       'suggestions'
     ])
   },
-  beforeMount  () {
-    if (!this.$router.history.current.params.query) {
-      this.$router.history.push('/assessments')
-    }
-  },
   mounted () {
-    this.getAssessment()
+    this.getQuestionsByThreadId(this.$route.params.id)
   },
   methods: {
+    ...mapActions('assessments', [
+      'fetchSuggestions'
+    ]),
     toRoute (rname, rparams = {}, query = {}) {
       this.dialog = true
       this.$router.push({ name: rname, params: rparams, query: query })
-    },
-    getAssessment () {
-      if (this.$route.params.id !== undefined && this.$route.params.id) {
-        this.assessment.view(this.$route.params.id).then(res => {
-          if (res.data && res.data.relationships.message_thread) {
-            this.getThread(res.data.relationships.message_thread.data.id)
-          } else {
-            this.$router.push({ name: 'ask' })
-          }
-        })
-      }
     },
     getThread (id) {
       this.assessment.viewThread(id).then(res => {
@@ -150,6 +137,17 @@ export default {
           console.log('threadData: ', res)
           this.processMessageList()
           // this.messageList.push({type: 'text', author: `Support`, data: { text: res.data.attributes.initial_question }})
+        } else {
+          this.$router.push({ name: 'ask' })
+        }
+      })
+    },
+    getQuestionsByThreadId () {
+      this.assessment.getQuestionsByThreadId(this.$route.params.id).then(res => {
+        console.log('suggestions: ', res)
+        if (res.data) {
+          this.suggestions = res
+          console.log('suggestions: ', res)
         } else {
           this.$router.push({ name: 'ask' })
         }

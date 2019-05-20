@@ -52,8 +52,8 @@
                             @click.stop="toRoute('view', {id: card.id, query:card.attributes})"
                             style="cursor: pointer"
                           >
-                            {{dateForrmat(card.attributes.created_time)}} <br>
-                            <span class="caption grey--text"> {{card.attributes.target_individual.replace('_', ' ')}} </span>
+                            {{dateFormat(card.attributes.created_timestamp)}} <br>
+                            <span class="caption grey--text"> {{card.relationships.user.data.id}} </span>
                           </div>
                         </v-flex>
                       </v-layout>
@@ -114,7 +114,8 @@ export default {
       })
     },
     getAssessments () {
-      this.assessment.get(this.msgData.page).then(res => {
+      this.assessment.getThreads(this.msgData.page).then(res => {
+        console.log(res)
         if (res.data != null && res.meta) {
           this.msgData.data = res.data
           this.msgData.page = res.meta.pagination.page
@@ -126,7 +127,7 @@ export default {
     onPageChange () {
       this.getAssessments()
     },
-    dateForrmat (date) {
+    dateFormat (date) {
       let newDate = new Date(date)
       return this.months[newDate.getMonth()] + ' ' + newDate.getDay()
     }

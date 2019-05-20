@@ -61,6 +61,26 @@ class Assessment {
     });
   }
 
+  getThreads(page, query = '') {
+    return new Promise((resolve, reject) => {
+      const params = { 'page[number]': page, 'page[size]': window.pageSize };
+      if (query !== '') {
+        params['filter[message_thread]'] = query;
+      }
+
+      GETApi(`${types.BASE_URL}/message-threads/?include=user`, params)
+        .then((response) => {
+          if (response.success) {
+            return resolve(response.data);
+          }
+          this.errors.record(response.err.response.data);
+          this.errors.action();
+          reject(response.err);
+          return null;
+        });
+    });
+  }
+
   viewThread(id) {
     return new Promise((resolve, reject) => {
       GETApi(`${types.BASE_URL}/message-threads/${id}/`)
@@ -79,6 +99,21 @@ class Assessment {
   getParams() {
     return new Promise((resolve, reject) => {
       GETApi(`${types.BASE_URL}/chatbot-assessments/parameters/`)
+        .then((response) => {
+          if (response.success) {
+            return resolve(response.data);
+          }
+          this.errors.record(response.err.response.data);
+          this.errors.action();
+          reject(response.err);
+          return null;
+        });
+    });
+  }
+
+  getQuestionsByThreadId(threadId) {
+    return new Promise((resolve, reject) => {
+      GETApi(`${types.BASE_URL}/chatbot-assessments/1/questions_responses/`)
         .then((response) => {
           if (response.success) {
             return resolve(response.data);
