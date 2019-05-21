@@ -1,7 +1,7 @@
 import router from '@/router';
 import axios from 'axios';
 import lstore from '@/core/lstorage';
-import { BASE_URL } from '@/constant';
+import jwtDecode from 'jwt-decode';
 
 const { lsd } = lstore;
 
@@ -105,7 +105,10 @@ const actions = {
 
 const getters = {
   isUserAuthenticated(state) {
-    return state.token !== null && state.token !== undefined;
+    const decoded = jwtDecode(state.token);
+    const currentTime = Date.now() / 1000;
+
+    return state.token !== null && state.token !== undefined && !( decoded.exp < currentTime );
   },
   user(state) {
     return state.user;

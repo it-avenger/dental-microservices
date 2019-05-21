@@ -83,7 +83,7 @@ class Assessment {
 
   viewThread(id) {
     return new Promise((resolve, reject) => {
-      GETApi(`${types.BASE_URL}/message-threads/${id}/`)
+      GETApi(`${types.BASE_URL}/message-threads/${id}/?include=messages`)
         .then((response) => {
           if (response.success) {
             return resolve(response.data);
@@ -150,26 +150,14 @@ class Assessment {
 
       POSTApi(`${types.BASE_URL}/chatbot-assessments/predict/`, payload)
         .then((response) => {
-          const retData = { content: [], more: false };
-          if (reponse.success) {
-            if (response.data) {
-              retData.content = arr.concat(response.data.data);
-              if (response.data.meta.pagination.pages > page) {
-                retData.more = true;
-              }
-            }
-            
-            resolve(retData);
+          if (reponse.success) {            
+            resolve(response.data);
           } else {
-            this.errors.record(response.err.response.data);
-            this.errors.action();
             reject(response.err);
           }
           
         })
         .catch((error) => {
-          this.errors.record(error.response.data);
-          this.errors.action();
           reject(error);
           return null;
         });
