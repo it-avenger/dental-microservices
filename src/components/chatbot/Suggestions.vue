@@ -1,13 +1,58 @@
 <template>
     <div class="sc-suggestions-row" v-if="!multiple" :style="{background: colors.messageList.bg}">
-        <button class="sc-suggestions-element" v-for="(suggestion, idx) in suggestionData" @click="clicked(suggestion)"
-        :style="baseStyles" :key="idx">{{suggestion.name}}&nbsp;</button>
+      <button
+        v-if="this.currentPage !== 0"
+        type="button"
+        class="sc-suggestions-element"
+        :style="baseStyles"
+        @click="onChangePage(false)"
+      >
+        <v-icon>add</v-icon>
+      </button>
+      <button class="sc-suggestions-element" v-for="(suggestion, idx) in filteredSuggestion" @click="clicked(suggestion)"
+      :style="baseStyles" :key="idx">{{suggestion.name}}&nbsp;</button>
+      <button
+        v-if="this.currentPage !== this.totalPage - 1"
+        type="button" class="sc-suggestions-element"
+        :style="baseStyles"
+        @click="onChangePage(true)"
+      >
+        <v-icon>add</v-icon>
+      </button>
     </div>
     <div class="sc-suggestions-row" v-else :style="{background: colors.messageList.bg}">
       <v-layout row wrap>
-        <v-flex xs12 sm4 md4 v-for="(suggestion, idx) in suggestionData"  :key="idx">
-          <button type="button" class="sc-suggestions-element" @click="clicked(suggestion)"
-        :style="suggestion.selected ? selectedStyles : baseStyles" :key="idx" >{{suggestion.name}}&nbsp;</button>
+        <v-flex row>
+          <button
+            v-if="this.currentPage !== 0"
+            type="button"
+            class="sc-suggestions-element"
+            :style="baseStyles"
+            @click="onChangePage(false)"
+          >
+            <v-icon>add</v-icon>
+          </button>
+          <!-- <v-flex xs12 sm4 md4 v-for="(suggestion, idx) in suggestionData"  :key="idx">
+            <button type="button" class="sc-suggestions-element" @click="clicked(suggestion)"
+          :style="suggestion.selected ? selectedStyles : baseStyles" :key="idx" >{{suggestion.name}}&nbsp;</button>
+          </v-flex> -->
+          <button
+            class="sc-suggestions-element"
+            v-for="(suggestion, idx) in filteredSuggestion"
+            @click="clicked(suggestion)"
+            :style="baseStyles"
+            :key="idx"
+          >
+            {{suggestion.name}}&nbsp;
+          </button>
+          <button
+            v-if="this.currentPage !== this.totalPage - 1"
+            type="button" class="sc-suggestions-element"
+            :style="baseStyles"
+            @click="onChangePage(true)"
+          >
+            <v-icon>add</v-icon>
+          </button>
         </v-flex>
         <v-flex xs12>
         <v-card-actions>
@@ -27,7 +72,11 @@ export default {
       multiple: false,
       baseStyles: {},
       selectedStyles: {},
-      selectedArr: []
+      selectedArr: [],
+      number_per_page: 8,
+      currentPage: 0,
+      totalPage: 1,
+      filteredSuggestion: []
     }
   },
   props: {
@@ -41,7 +90,6 @@ export default {
   },
   watch: {
     suggestions: function () {
-      console.log(this.suggestions, '+++')
       let suggestions = this.suggestions
 
       this.multiple = false
@@ -57,8 +105,24 @@ export default {
           this.multiple = true
         }
 
+        if (this.suggestionData.length < this.number_per_page) {
+          this.filteredSuggestion = this.suggestionData
+          this.totalPage = 1
+        } else {
+          this.totalPage = Math.ceil(this.suggestionData.length / this.number_per_page)
+          this.filteredSuggestion = this.suggestionData.slice(this.number_per_page * this.currentPage, this.number_per_page * this.currentPage + this.number_per_page)
+        }
+
         this.baseStyles = { borderColor: '#6CB4D9', backgroundColor: '#fff', color: '#6CB4D9' }
         this.selectedStyles = { borderColor: '#6CB4D9', backgroundColor: '#6CB4D9', color: '#fff' }
+      }
+    },
+    currentPage: function () {
+
+      if (this.suggestionData.length < this.number_per_page) {
+        this.filteredSuggestion = this.suggestionData
+      } else {
+        this.filteredSuggestion = this.suggestionData.slice(this.number_per_page * this.currentPage, this.number_per_page * this.currentPage + this.number_per_page)
       }
     }
   },
@@ -103,6 +167,20 @@ export default {
       })
       this.suggestionData = []
       this.$parent._submitSuggestion({ author: 'me', type: 'text', data: { text: text, topic: this.suggestions.topic, id: this.selectedArr } })
+    },
+    onChangePage (isForward=true) {
+      if (this.suggestionData.length > this.number_per_page) {
+        console.log(this.currentPage, this.totalPage)
+        if (isForward) {
+          if (this.currentPage < this.totalPage - 1) {
+            this.currentPage = this.currentPage + 1
+          }
+        } else {
+          if (this.currentPage > 0) {
+            this.currentPage = this.currentPage - 1
+          }
+        }
+      }
     }
   }
 }

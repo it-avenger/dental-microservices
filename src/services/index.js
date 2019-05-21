@@ -35,8 +35,9 @@ export const POSTApi = (url, data, params = null) => {
     'Content-Type': 'application/vnd.api+json',
   };
 
-  return axios.post(url, { data }, jsonParams)
-    .then(res => res.data.data);
+  return axios.post(url, {data}, jsonParams)
+    .then(res => ({ success: true, data: res.data }))
+    .catch(err => ({ success: false, err }));
 };
 
 export const DELETEApi = (url) => {

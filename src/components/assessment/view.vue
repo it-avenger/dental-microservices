@@ -109,7 +109,7 @@ export default {
     },
     showRating: false,
     disableRating: false,
-    oldStep: -1,
+    oldStep: 0,
     step: -1,
     questions: [],
     questionHash: {},
@@ -148,19 +148,29 @@ export default {
         if (res.data) {
           this.questions = res.data
 
-          res.data.forEach(item => {
-            this.questionHash[item.attributes.topic] = item
+          res.data.forEach((item, idx) => {
+            let isNext = null;
+            if (idx !== res.data.length - 1) {
+              isNext = res.data[idx+1].attributes.topic
+            }
+            this.questionHash[item.attributes.topic] = { ...item, next: isNext }
           })
 
-          this.additionalQuestions.forEach(item => {
-            this.additionalQuestionHash[item.topic] = item
+          this.additionalQuestions.forEach((item, idx) => {
+            let isNext = null;
+            if (idx !== this.additionalQuestions.length - 1) {
+              isNext = this.additionalQuestions[idx+1].topic
+            }
+
+            this.additionalQuestionHash[item.topic] = { ...item, next: isNext }
           })
         } else {
           this.$router.push({ name: 'ask' })
         }
       })
     },
-    processMessageList () {
+    async processMessageList () {
+      let next = null // last question topic
       this.messageList.push({
         type: 'text',
         author: this.participants[0].id,
@@ -169,261 +179,304 @@ export default {
       })
 
       this.me = this.threadData.data.relationships.user.data.id
-      // if (this.threadData.data.relationships.messages.data.length > 0) {
-      //   let msgData = this.threadData.included.filter(msg => {
-      //     return msg.type === 'messages'
-      //   })
-      //   if (msgData.length > 0) {
-      //     msgData.forEach(async (msg, index) => {
-      //       if (msg.relationships.sender.data.id === this.me && msg.attributes.topic !== '') {
-      //         const topic = msg.attributes.topic
+      if (this.threadData.data.relationships.messages.data.length > 0) {
+        let msgData = this.threadData.included.filter(msg => {
+          return msg.type === 'messages'
+        })
+        if (msgData.length > 0 && this.questionHash && this.additionalQuestionHash) {
+          msgData.forEach(async (msg, index) => {
+            if (msg.relationships.sender.data.id === this.me && msg.attributes.topic && msg.attributes.topic !== '' && msg.attributes.topic !== 'undefined' ) {
+              const topic = msg.attributes.topic
 
-      //         if (msg.attributes.topic === 'initial_response' && this.step !== this.oldStep) {
-      //           this.messageList.push({ type: 'text', author: `me`, data: { text: msg.attributes.message_text } })
-      //           this.messageList.push({ type: 'text', author: this.participants[0].id, data: { text: this.threadData.data.attributes.initial_response } })
-      //           // this.messageList.push({
-      //           //   type: 'text',
-      //           //   author: this.participants[0].id,
-      //           //   data: {
-      //           //     text: this.questionHash[topic].attributes.question
-      //           //   },
-      //           //   suggestions: this.getSuggestionListFromProps(this.questionHash[topic].attributes)
-      //           // })
-      //         }
+              if (msg.attributes.topic === 'initial_response') {
+                if (this.oldStep >= 1 )  { return }
+                this.messageList.push({ type: 'text', author: `me`, data: { text: msg.attributes.message_text } })
+                this.messageList.push({ type: 'text', author: this.participants[0].id, data: { text: this.threadData.data.attributes.initial_response } })
+                this.oldStep = this.oldStep + 1
+              }
 
-      //         if (topic !== 'initial_response'){
-      //           console.log('++++++++++++ :: ', this.step, this.questions.length)
-      //           if (this.step < this.questions.length - 1) {
+              if (topic !== 'initial_response'){
+                console.log('++++++++++++ :: ', msg, this.questions, this.questionHash, this.step)
+                if (this.questionHash.hasOwnProperty(topic)) {
                   
-      //             let suggestions = {}
-      //             if (topic === 'symptoms') {
-      //               debugger
-      //               const res = await this.assessment.getSymptoms(this.questionHash['age-groups'].id, this.questionHash['body-structures'].id)
+                  let suggestions = {}
+                  if (topic === 'symptoms') {
+                    const res = await this.assessment.getSymptoms(this.questionHash['age-groups'].id, this.questionHash['body-structures'].id)
 
-      //               if (res.data) {
-      //                 const data = await res.included.map(item => {
-      //                   return {...item.attributes, parent: '0'} 
-      //                 })
+                    if (res.data) {
+                      const data = await res.included.map(item => {
+                        return {...item.attributes, parent: '0'} 
+                      })
 
-      //                 suggestions = {
-      //                   data: data,
-      //                   multiple: this.questionHash.symptoms.attributes['input-type'] === 'choice' ? false : true
-      //                 }
-      //               } else {
-      //                 debugger
-      //                 suggestions = this.getSuggestionListFromProps(this.questionHash[topic].attributes)
-      //               }
+                      suggestions = {
+                        data: data,
+                        multiple: this.questionHash.symptoms.attributes['input-type'] === 'choice' ? false : true
+                      }
+                    }
+                  } else {
+                    suggestions = this.getSuggestionListFromProps(this.questionHash[topic].attributes)
+                  }
 
-      //               const questionMessage = {
-      //                 author: this.participants[0].id,
-      //                 data: {
-      //                   text: this.questions[topic].attributes.question,
-      //                   topic: this.questions[topic].attributes.topic
-      //                 },
-      //                 type: 'text',
-      //                 suggestions: suggestions
-      //               }
+                  const questionMessage = {
+                    author: this.participants[0].id,
+                    data: {
+                      text: this.questionHash[topic].attributes.question,
+                      topic: this.questionHash[topic].attributes.topic
+                    },
+                    type: 'text',
+                    suggestions: suggestions
+                  }
 
-      //               this.messageList.push(questionMessage)
+                  this.messageList.push(questionMessage)
 
-      //               this.messageList.push({ type: 'text', author: `me`, data: { text: msg.attributes.message_text } })
-      //               this.messageList.push({ type: 'text', author: this.participants[0].id, data: { text: this.questionHash[topic].attributes.response } })
-      //             }
+                  this.messageList.push({ type: 'text', author: `me`, data: { text: msg.attributes.message_text } })
+                  this.messageList.push({ type: 'text', author: this.participants[0].id, data: { text: this.questionHash[topic].attributes.response } })
+                  next = this.questionHash[topic].next
 
-      //           } else {
-      //             this.messageList.push({
-      //               type: 'text',
-      //               author: this.participants[0].id,
-      //               data: {
-      //                 text: this.additionalQuestionHash[topic].question,
-      //                 topic: this.additionalQuestionHash[topic].topic
-      //               },
-      //               suggestions: {}
-      //             })
-      //             this.messageList.push({ type: 'text', author: `me`, data: { text: msg.attributes.message_text } })
-      //             this.messageList.push({ type: 'text', author: this.participants[0].id, data: { text: this.additionalQuestionHash[topic].response } })
-      //           }
-      //         }
+                  this.assessmentParams[topic] = {
+                    id: this.getOptionId(this.questionHash[topic].id, msg.attributes.message_text),
+                    name: msg.attributes.message_text
+                  }
 
-      //         this.oldStep = this.step
-      //         this.step = this.step + 1
-      //       }
-      //     })
-      //   }
-      //   // this.getRating(this.$route.params.id)
-      // }
+                } else {
+                  this.messageList.push({
+                    type: 'text',
+                    author: this.participants[0].id,
+                    data: {
+                      text: this.additionalQuestionHash[topic].question,
+                      topic: this.additionalQuestionHash[topic].topic
+                    },
+                    suggestions: {}
+                  })
+                  this.messageList.push({ type: 'text', author: `me`, data: { text: msg.attributes.message_text } })
+                  this.messageList.push({ type: 'text', author: this.participants[0].id, data: { text: this.additionalQuestionHash[topic].response } })
+                  next = this.additionalQuestionHash[topic].next
+                }
+              }
+
+              this.step = this.step + 1
+            }
+          })
+        }
+
+        if (next !== null) {
+          if (this.questionHash.hasOwnProperty(next)) {
+            let suggestions = {}
+            if (next === 'symptoms') {
+              const res = await this.assessment.getSymptoms(this.questionHash['age-groups'].id, this.questionHash['body-structures'].id)
+              debugger
+              if (res.data) {
+                const data = await res.included.map(item => {
+                  return {...item.attributes, parent: '0'} 
+                })
+
+                suggestions = {
+                  data: data,
+                  multiple: this.questionHash.symptoms.attributes['input-type'] === 'choice' ? false : true
+                }
+              }
+            } else {
+              suggestions = this.getSuggestionListFromProps(this.questionHash[next].attributes)
+            }
+
+            const questionMessage = {
+              author: this.participants[0].id,
+              data: {
+                text: this.questionHash[next].attributes.question,
+                topic: this.questionHash[next].attributes.topic
+              },
+              type: 'text',
+              suggestions: suggestions
+            }
+
+            this.messageList.push(questionMessage)
+          } else {
+            this.messageList.push({
+              type: 'text',
+              author: this.participants[0].id,
+              data: {
+                text: this.additionalQuestionHash[next].question,
+                topic: this.additionalQuestionHash[next].topic
+              },
+              suggestions: {}
+            })
+          }
+        }
+
+        // this.getRating(this.$route.params.id)
+      }
     },
     async onMessageWasSent (msg) {
-      console.log('msg: ', msg)
-      // if (this.step < this.questions.length + this.additionalQuestions.length - 1) {
-      //   if (this.step == -1) {
-      //     let newMessage = Object.assign({}, msg)
-      //     newMessage.data.topic = 'initial_response'
+      debugger
+      if (this.step < this.questions.length + this.additionalQuestions.length - 1) {
+        if (this.step == -1) {
+          let newMessage = Object.assign({}, msg)
+          newMessage.data.topic = 'initial_response'
 
-      //     this.saveMessage(newMessage)
+          this.saveMessage(newMessage)
 
-      //     const responseMessage = {
-      //       author: this.participants[0].id,
-      //       data: {
-      //         text: this.threadData.data.attributes.initial_response,
-      //         topic: 'initial_response'
-      //       },
-      //       type: 'text'
-      //     }
+          const responseMessage = {
+            author: this.participants[0].id,
+            data: {
+              text: this.threadData.data.attributes.initial_response,
+              topic: 'initial_response'
+            },
+            type: 'text'
+          }
 
-      //     this.messageList.push(responseMessage)
-      //   } else {
-      //     this.saveMessage(msg)
-      //     let responseMessage = {}
+          this.messageList.push(responseMessage)
+        } else {
+          this.saveMessage(msg)
+          let responseMessage = {}
 
-      //     if (this.step < this.questions.length) {
-      //       responseMessage = {
-      //         author: this.participants[0].id,
-      //         data: {
-      //           text: this.questions[this.step].attributes.response,
-      //           topic: this.questions[this.step].attributes.topic
-      //         },
-      //         type: 'text'
-      //       }
+          if (this.step < this.questions.length) {
+            responseMessage = {
+              author: this.participants[0].id,
+              data: {
+                text: this.questions[this.step].attributes.response,
+                topic: this.questions[this.step].attributes.topic
+              },
+              type: 'text'
+            }
 
-      //       this.assessmentParams[this.questions[this.step].attributes.topic] = {
-      //         id: msg.data.id,
-      //         name: msg.data.text
-      //       }
-      //     } else {
-      //       responseMessage = {
-      //         author: this.participants[0].id,
-      //         data: {
-      //           text: this.additionalQuestions[this.step - this.questions.length].response
-      //         },
-      //         type: 'text'
-      //       }
+            this.assessmentParams[this.questions[this.step].attributes.topic] = {
+              id: msg.data.id,
+              name: msg.data.text
+            }
+          } else {
+            responseMessage = {
+              author: this.participants[0].id,
+              data: {
+                text: this.additionalQuestions[this.step - this.questions.length].response
+              },
+              type: 'text'
+            }
 
-      //       this.assessmentParams[this.additionalQuestions[this.step - this.questions.length].topic] = {
-      //         id: msg.data.id,
-      //         name: msg.data.text
-      //       }
-      //     }
+            this.assessmentParams[this.additionalQuestions[this.step - this.questions.length].topic] = {
+              id: msg.data.id,
+              name: msg.data.text
+            }
+          }
 
-      //     this.messageList.push(responseMessage)
-      //   }
+          this.messageList.push(responseMessage)
+        }
 
-      //   if (this.step < this.questions.length - 1) {
-      //     // add a message in channel when chatbot asking a question
-      //     let suggestions = {}
-      //     if (this.questions[this.step + 1].attributes.topic != 'symptoms') {
-      //       suggestions = this.getSuggestionListFromProps(this.questions[this.step + 1].attributes)
-      //     } else {
+        if (this.step < this.questions.length - 1) {
+          // add a message in channel when chatbot asking a question
+          let suggestions = {}
+          if (this.questions[this.step + 1].attributes.topic != 'symptoms') {
+            suggestions = this.getSuggestionListFromProps(this.questions[this.step + 1].attributes)
+          } else {
 
-      //       const res = await this.assessment.getSymptoms(this.assessmentParams['age-groups'].id, this.assessmentParams['body-structures'].id)
+            const res = await this.assessment.getSymptoms(this.assessmentParams['age-groups'].id, this.assessmentParams['body-structures'].id)
 
-      //       if (res.data) {
-      //         const data = await res.included.map(item => {
-      //           return {...item.attributes, parent: '0'} 
-      //         })
+            if (res.data) {
+              const data = await res.included.map(item => {
+                return {...item.attributes, parent: '0'} 
+              })
 
-      //         suggestions = {
-      //           data: data,
-      //           multiple: this.questions[this.step + 1].attributes['input-type'] === 'choice' ? false : true
-      //         }
+              suggestions = {
+                data: data,
+                multiple: this.questions[this.step + 1].attributes['input-type'] === 'choice' ? false : true
+              }
 
-      //       }
-      //     }
+            }
+          }
 
-      //     const questionMessage = {
-      //       author: this.participants[0].id,
-      //       data: {
-      //         text: this.questions[this.step + 1].attributes.question,
-      //         topic: this.questions[this.step + 1].attributes.topic
-      //       },
-      //       type: 'text',
-      //       suggestions: suggestions
-      //     }
+          const questionMessage = {
+            author: this.participants[0].id,
+            data: {
+              text: this.questions[this.step + 1].attributes.question,
+              topic: this.questions[this.step + 1].attributes.topic
+            },
+            type: 'text',
+            suggestions: suggestions
+          }
 
-      //     this.messageList.push(questionMessage)
+          this.messageList.push(questionMessage)
 
-      //   } else {
-      //     // additional questions
-      //     let suggestions = {}
-      //     if (this.additionalQuestions[this.step - this.questions.length + 1].topic === 'user-ratings') {
-      //       const threadId = this.$route.params.id
+        } else {
+          // additional questions
+          let suggestions = {}
+          if (this.additionalQuestions[this.step - this.questions.length + 1].topic === 'user-ratings') {
+            const threadId = this.$route.params.id
 
-      //       const prediction = this.assessment.getPredictons({
-      //         message_thread: threadId,
-      //         target_individual: this.assessmentParams['family-members'].name,
-      //         review_by_dentist: false,
-      //         review_by_algorithm: false,
-      //         gender: this.assessmentParams.genders.id,
-      //         body_structure: this.assessmentParams['body-structures'].id,
-      //         age_group: this.assessmentParams['age-groups'].id,
-      //         symptoms: this.assessmentParams.symptoms.id,
-      //         pain_level: this.assessmentParams['pain-levels'].id
-      //       })
+            const prediction = this.assessment.getPredictons({
+              message_thread: threadId,
+              target_individual: this.assessmentParams['family-members'].name,
+              review_by_dentist: false,
+              review_by_algorithm: false,
+              gender: this.assessmentParams.genders.id,
+              body_structure: this.assessmentParams['body-structures'].id,
+              age_group: this.assessmentParams['age-groups'].id,
+              symptoms: this.assessmentParams.symptoms.id,
+              pain_level: this.assessmentParams['pain-levels'].id
+            })
 
-      //       suggestions = {
-      //         data: [{
-      //           id: 1,
-      //           name: 'Dental caries',
-      //           parent: '0'
-      //         },
-      //         {
-      //           id: 2,
-      //           name: 'Bleeding gums',
-      //           parent: '0'
-      //         },
-      //         {
-      //           id: 3,
-      //           name: 'Dental caries - lip',
-      //           parent: '1'
-      //         },
-      //         {
-      //           id: 4,
-      //           name: 'Dental caries - mouth',
-      //           parent: '1'
-      //         },
-      //         {
-      //           id: 5,
-      //           name: 'Dental caries',
-      //           parent: '2'
-      //         },
-      //         {
-      //           id: 6,
-      //           name: 'Dental caries',
-      //           parent: '2'
-      //         }],
-      //         multiple: false
-      //       }
-      //     }
+            suggestions = {
+              data: [{
+                id: 1,
+                name: 'Dental caries',
+                parent: '0'
+              },
+              {
+                id: 2,
+                name: 'Bleeding gums',
+                parent: '0'
+              },
+              {
+                id: 3,
+                name: 'Dental caries - lip',
+                parent: '1'
+              },
+              {
+                id: 4,
+                name: 'Dental caries - mouth',
+                parent: '1'
+              },
+              {
+                id: 5,
+                name: 'Dental caries',
+                parent: '2'
+              },
+              {
+                id: 6,
+                name: 'Dental caries',
+                parent: '2'
+              }],
+              multiple: false
+            }
+          }
           
-      //     const questionMessage = {
-      //       author: this.participants[0].id,
-      //       data: {
-      //         text: this.additionalQuestions[this.step - this.questions.length + 1].question,
-      //         topic: this.additionalQuestions[this.step - this.questions.length + 1].topic
-      //       },
-      //       type: 'text',
-      //       suggestions: suggestions
-      //     }
+          const questionMessage = {
+            author: this.participants[0].id,
+            data: {
+              text: this.additionalQuestions[this.step - this.questions.length + 1].question,
+              topic: this.additionalQuestions[this.step - this.questions.length + 1].topic
+            },
+            type: 'text',
+            suggestions: suggestions
+          }
 
-      //     this.messageList.push(questionMessage)
+          this.messageList.push(questionMessage)
 
-      //   }
+        }
 
-      //   this.step = this.step + 1
-      // } else {
-      //   const responseMessage = {
-      //     author: this.participants[0].id,
-      //     data: {
-      //       text: this.additionalQuestions[this.step - this.questions.length].response,
-      //       topic: this.additionalQuestions[this.step - this.questions.length].topic
-      //     },
-      //     type: 'text'
-      //   }
+        this.step = this.step + 1
+      } else {
+        const responseMessage = {
+          author: this.participants[0].id,
+          data: {
+            text: this.additionalQuestions[this.step - this.questions.length].response,
+            topic: this.additionalQuestions[this.step - this.questions.length].topic
+          },
+          type: 'text'
+        }
 
-      //   this.messageList.push(responseMessage)
+        this.messageList.push(responseMessage)
 
-      //   this.disableUserInput = true
-      // }
+        this.disableUserInput = true
+      }
 
     },
     getSuggestionListFromProps (props) {
@@ -493,6 +546,21 @@ export default {
       const createResponse = await this.assessment.createMessage(formData)
 
       console.log('== createResponse ==', createResponse)
+    },
+    getOptionId(questionId, optionText) {
+      let optionId = null
+
+      this.questions.forEach((question) => {
+        if (question.id === questionId) {
+          question.attributes.options.data.forEach((option) => {
+            if (option.attributes.name === optionText) {
+              optionId = option.id
+            }
+          })
+        }
+      })
+
+      return optionId
     }
   }
 }
