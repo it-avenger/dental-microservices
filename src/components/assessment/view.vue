@@ -53,14 +53,12 @@ export default {
     me: 0,
     threadData: { data: {}, included: [] },
     title: 'chatbot',
-    // threadId: this.$router.history.current.params.id || '', 
-    // query: this.$router.history.current.params.query || null,
     participants: [
       {
         id: '4',
         name: 'chatbot',
         type: 'system',
-        imageUrl: '/static/img/chat.png'
+        imageUrl: '/static/img/chatbot.png'
       },
       {
         id: 'me',
@@ -70,7 +68,7 @@ export default {
       }
     ],
     messageList: [],
-    titleImageUrl: 'static/img/double-heart.svg',
+    titleImageUrl: 'static/img/bot.png',
     newMessagesCount: 0,
     showTypingIndicator: '',
     alwaysScrollToBottom: true,
@@ -111,16 +109,21 @@ export default {
     },
     showRating: false,
     disableRating: false,
-    step: 0,
+    oldStep: -1,
+    step: -1,
+    questions: [],
+    questionHash: {},
+    additionalQuestionHash: {},
     assessmentParams: {}
   }),
   computed: {
-    ...mapState('assessements', [
-      'suggestions'
+    ...mapState('assessments', [
+      'additionalQuestions'
     ])
   },
-  mounted () {
-    this.getQuestionsByThreadId(this.$route.params.id)
+  async mounted () {
+    await this.getQuestionsByThreadId()
+    this.getThread(this.$route.params.id)
   },
   methods: {
     ...mapActions('assessments', [
@@ -134,9 +137,7 @@ export default {
       this.assessment.viewThread(id).then(res => {
         if (res.data && res.data.attributes) {
           this.threadData = res
-          console.log('threadData: ', res)
           this.processMessageList()
-          // this.messageList.push({type: 'text', author: `Support`, data: { text: res.data.attributes.initial_question }})
         } else {
           this.$router.push({ name: 'ask' })
         }
@@ -144,10 +145,16 @@ export default {
     },
     getQuestionsByThreadId () {
       this.assessment.getQuestionsByThreadId(this.$route.params.id).then(res => {
-        console.log('suggestions: ', res)
         if (res.data) {
-          this.suggestions = res
-          console.log('suggestions: ', res)
+          this.questions = res.data
+
+          res.data.forEach(item => {
+            this.questionHash[item.attributes.topic] = item
+          })
+
+          this.additionalQuestions.forEach(item => {
+            this.additionalQuestionHash[item.topic] = item
+          })
         } else {
           this.$router.push({ name: 'ask' })
         }
@@ -162,97 +169,279 @@ export default {
       })
 
       this.me = this.threadData.data.relationships.user.data.id
-      if (this.threadData.data.relationships.messages.data.length > 0) {
-        let msgData = this.threadData.included.filter(msg => {
-          return msg.type === 'messages'
-        })
-        if (msgData.length > 0) {
-          msgData.forEach((msg, index) => {
-            if (msg.relationships.sender.data.id === this.me) {
-              this.messageList.push({ type: 'text', author: `me`, data: { text: msg.attributes.message_text } })
-              if (index === 0) {
-                this.messageList.push({ type: 'text', author: this.participants[0].name, data: { text: this.threadData.data.attributes.initial_response } })
-              }
-            } else {
-              this.messageList.push({ type: 'text', author: this.participants[0].name, data: { text: msg.attributes.message_text } })
-            }
-          })
-        }
-        this.getRating(this.$route.params.id)
-      }
+      // if (this.threadData.data.relationships.messages.data.length > 0) {
+      //   let msgData = this.threadData.included.filter(msg => {
+      //     return msg.type === 'messages'
+      //   })
+      //   if (msgData.length > 0) {
+      //     msgData.forEach(async (msg, index) => {
+      //       if (msg.relationships.sender.data.id === this.me && msg.attributes.topic !== '') {
+      //         const topic = msg.attributes.topic
+
+      //         if (msg.attributes.topic === 'initial_response' && this.step !== this.oldStep) {
+      //           this.messageList.push({ type: 'text', author: `me`, data: { text: msg.attributes.message_text } })
+      //           this.messageList.push({ type: 'text', author: this.participants[0].id, data: { text: this.threadData.data.attributes.initial_response } })
+      //           // this.messageList.push({
+      //           //   type: 'text',
+      //           //   author: this.participants[0].id,
+      //           //   data: {
+      //           //     text: this.questionHash[topic].attributes.question
+      //           //   },
+      //           //   suggestions: this.getSuggestionListFromProps(this.questionHash[topic].attributes)
+      //           // })
+      //         }
+
+      //         if (topic !== 'initial_response'){
+      //           console.log('++++++++++++ :: ', this.step, this.questions.length)
+      //           if (this.step < this.questions.length - 1) {
+                  
+      //             let suggestions = {}
+      //             if (topic === 'symptoms') {
+      //               debugger
+      //               const res = await this.assessment.getSymptoms(this.questionHash['age-groups'].id, this.questionHash['body-structures'].id)
+
+      //               if (res.data) {
+      //                 const data = await res.included.map(item => {
+      //                   return {...item.attributes, parent: '0'} 
+      //                 })
+
+      //                 suggestions = {
+      //                   data: data,
+      //                   multiple: this.questionHash.symptoms.attributes['input-type'] === 'choice' ? false : true
+      //                 }
+      //               } else {
+      //                 debugger
+      //                 suggestions = this.getSuggestionListFromProps(this.questionHash[topic].attributes)
+      //               }
+
+      //               const questionMessage = {
+      //                 author: this.participants[0].id,
+      //                 data: {
+      //                   text: this.questions[topic].attributes.question,
+      //                   topic: this.questions[topic].attributes.topic
+      //                 },
+      //                 type: 'text',
+      //                 suggestions: suggestions
+      //               }
+
+      //               this.messageList.push(questionMessage)
+
+      //               this.messageList.push({ type: 'text', author: `me`, data: { text: msg.attributes.message_text } })
+      //               this.messageList.push({ type: 'text', author: this.participants[0].id, data: { text: this.questionHash[topic].attributes.response } })
+      //             }
+
+      //           } else {
+      //             this.messageList.push({
+      //               type: 'text',
+      //               author: this.participants[0].id,
+      //               data: {
+      //                 text: this.additionalQuestionHash[topic].question,
+      //                 topic: this.additionalQuestionHash[topic].topic
+      //               },
+      //               suggestions: {}
+      //             })
+      //             this.messageList.push({ type: 'text', author: `me`, data: { text: msg.attributes.message_text } })
+      //             this.messageList.push({ type: 'text', author: this.participants[0].id, data: { text: this.additionalQuestionHash[topic].response } })
+      //           }
+      //         }
+
+      //         this.oldStep = this.step
+      //         this.step = this.step + 1
+      //       }
+      //     })
+      //   }
+      //   // this.getRating(this.$route.params.id)
+      // }
     },
     async onMessageWasSent (msg) {
-      console.log(msg, this.participants)
-      this.saveMessage(msg)
+      console.log('msg: ', msg)
+      // if (this.step < this.questions.length + this.additionalQuestions.length - 1) {
+      //   if (this.step == -1) {
+      //     let newMessage = Object.assign({}, msg)
+      //     newMessage.data.topic = 'initial_response'
 
-      if (this.step == 0) {
-        const initialResponseMessage = {
-          author: this.participants[0].id,
-          data: {
-            text: this.threadData.data.attributes.initial_response
-          },
-          type: 'text'
-        }
+      //     this.saveMessage(newMessage)
 
-        this.saveMessage(msg)
-      } else {
-        this.assessmentParams[this.threadData.included[this.step-1].attributes.topic] = {
-          id: msg.data.id,
-          name: msg.data.text
-        }
-      }
+      //     const responseMessage = {
+      //       author: this.participants[0].id,
+      //       data: {
+      //         text: this.threadData.data.attributes.initial_response,
+      //         topic: 'initial_response'
+      //       },
+      //       type: 'text'
+      //     }
 
-      // add a message in channel when chatbot asking a question
-      const questionMessage = {
-        author: this.participants[0].id,
-        data: {
-          text: this.threadData.included[this.step].attributes.question
-        },
-        type: 'text',
-        suggestions: this.getSuggestionListFromProps(this.suggestions.data[this.threadData.included[this.step].attributes.topic])
-      }
+      //     this.messageList.push(responseMessage)
+      //   } else {
+      //     this.saveMessage(msg)
+      //     let responseMessage = {}
 
-      this.saveMessage(msg)
+      //     if (this.step < this.questions.length) {
+      //       responseMessage = {
+      //         author: this.participants[0].id,
+      //         data: {
+      //           text: this.questions[this.step].attributes.response,
+      //           topic: this.questions[this.step].attributes.topic
+      //         },
+      //         type: 'text'
+      //       }
 
-      if (this.step < this.threadData.included.length - 1) {
-        this.step = this.step + 1
-      } else {
-        console.log(' ********* send predic *******', this.assessmentParams)
-        const query = this.$router.history.current.params.query
-        const threadId = this.$router.history.current.params.id
+      //       this.assessmentParams[this.questions[this.step].attributes.topic] = {
+      //         id: msg.data.id,
+      //         name: msg.data.text
+      //       }
+      //     } else {
+      //       responseMessage = {
+      //         author: this.participants[0].id,
+      //         data: {
+      //           text: this.additionalQuestions[this.step - this.questions.length].response
+      //         },
+      //         type: 'text'
+      //       }
 
-        const prediction = await this.assessment.getPredictons({
-          message_thread: threadId,
-          target_individual: this.assessmentParams['family-members'].name,
-          review_by_dentist: query.review_by_dentist,
-          review_by_algorithm: query.review_by_algorithm,
-          // gender: this.assessmentParams.genders.id,
-          gender: 1,
-          body_structure: this.assessmentParams['body-structures'].id,
-          age_group: this.assessmentParams['age-groups'].id,
-          symptoms: [`${this.assessmentParams.symptoms.id}`],
-          pain_level: this.assessmentParams['pain-levels'].id
-        })
+      //       this.assessmentParams[this.additionalQuestions[this.step - this.questions.length].topic] = {
+      //         id: msg.data.id,
+      //         name: msg.data.text
+      //       }
+      //     }
 
-        console.log('=== prediction ========: ', prediction)
-      }
+      //     this.messageList.push(responseMessage)
+      //   }
+
+      //   if (this.step < this.questions.length - 1) {
+      //     // add a message in channel when chatbot asking a question
+      //     let suggestions = {}
+      //     if (this.questions[this.step + 1].attributes.topic != 'symptoms') {
+      //       suggestions = this.getSuggestionListFromProps(this.questions[this.step + 1].attributes)
+      //     } else {
+
+      //       const res = await this.assessment.getSymptoms(this.assessmentParams['age-groups'].id, this.assessmentParams['body-structures'].id)
+
+      //       if (res.data) {
+      //         const data = await res.included.map(item => {
+      //           return {...item.attributes, parent: '0'} 
+      //         })
+
+      //         suggestions = {
+      //           data: data,
+      //           multiple: this.questions[this.step + 1].attributes['input-type'] === 'choice' ? false : true
+      //         }
+
+      //       }
+      //     }
+
+      //     const questionMessage = {
+      //       author: this.participants[0].id,
+      //       data: {
+      //         text: this.questions[this.step + 1].attributes.question,
+      //         topic: this.questions[this.step + 1].attributes.topic
+      //       },
+      //       type: 'text',
+      //       suggestions: suggestions
+      //     }
+
+      //     this.messageList.push(questionMessage)
+
+      //   } else {
+      //     // additional questions
+      //     let suggestions = {}
+      //     if (this.additionalQuestions[this.step - this.questions.length + 1].topic === 'user-ratings') {
+      //       const threadId = this.$route.params.id
+
+      //       const prediction = this.assessment.getPredictons({
+      //         message_thread: threadId,
+      //         target_individual: this.assessmentParams['family-members'].name,
+      //         review_by_dentist: false,
+      //         review_by_algorithm: false,
+      //         gender: this.assessmentParams.genders.id,
+      //         body_structure: this.assessmentParams['body-structures'].id,
+      //         age_group: this.assessmentParams['age-groups'].id,
+      //         symptoms: this.assessmentParams.symptoms.id,
+      //         pain_level: this.assessmentParams['pain-levels'].id
+      //       })
+
+      //       suggestions = {
+      //         data: [{
+      //           id: 1,
+      //           name: 'Dental caries',
+      //           parent: '0'
+      //         },
+      //         {
+      //           id: 2,
+      //           name: 'Bleeding gums',
+      //           parent: '0'
+      //         },
+      //         {
+      //           id: 3,
+      //           name: 'Dental caries - lip',
+      //           parent: '1'
+      //         },
+      //         {
+      //           id: 4,
+      //           name: 'Dental caries - mouth',
+      //           parent: '1'
+      //         },
+      //         {
+      //           id: 5,
+      //           name: 'Dental caries',
+      //           parent: '2'
+      //         },
+      //         {
+      //           id: 6,
+      //           name: 'Dental caries',
+      //           parent: '2'
+      //         }],
+      //         multiple: false
+      //       }
+      //     }
+          
+      //     const questionMessage = {
+      //       author: this.participants[0].id,
+      //       data: {
+      //         text: this.additionalQuestions[this.step - this.questions.length + 1].question,
+      //         topic: this.additionalQuestions[this.step - this.questions.length + 1].topic
+      //       },
+      //       type: 'text',
+      //       suggestions: suggestions
+      //     }
+
+      //     this.messageList.push(questionMessage)
+
+      //   }
+
+      //   this.step = this.step + 1
+      // } else {
+      //   const responseMessage = {
+      //     author: this.participants[0].id,
+      //     data: {
+      //       text: this.additionalQuestions[this.step - this.questions.length].response,
+      //       topic: this.additionalQuestions[this.step - this.questions.length].topic
+      //     },
+      //     type: 'text'
+      //   }
+
+      //   this.messageList.push(responseMessage)
+
+      //   this.disableUserInput = true
+      // }
 
     },
     getSuggestionListFromProps (props) {
       let suggestions = {}
       let data = []
 
-      if (props) {
-        props.forEach(item => {
+      if (props.options && props.options.data) {
+        props.options.data.forEach(item => {
           data.push({
             name: item.attributes.name,
             id: item.id,
+            topic: props.topic,
             parent: '0'
           })
         })
 
         suggestions.data = data
-        suggestions.multiple = false
+        suggestions.multiple = props['input-type'] === 'choice' ? false : true
       }
 
       return suggestions
@@ -295,6 +484,7 @@ export default {
 
       let formData = new FormData()
       formData.append('message_text', msg.data.text)
+      formData.append('topic', msg.data.topic)
       formData.append('thread', this.$route.params.id)
       formData.append('sender', sender)
       formData.append('receiver', receiver)

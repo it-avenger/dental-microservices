@@ -8,30 +8,44 @@ const apiCore = new Assessment()
 const initialState = {
   threadData: [],
   messageList: [],
-  suggestions: {}
+  suggestions: {},
+  additionalQuestions: [{
+    question: 'When has it started?',
+    response: 'Ok, got it',
+    options: null,
+    'input-type': 'choice',
+    is_casespecific: false,
+    is_hierarchical: false,
+    tone: 'casual',
+    topic: 'temporal-contexts'
+  },{
+    question: 'Do you have anything else to add?',
+    response: 'Ok, got it',
+    options: null,
+    'input-type': 'choice',
+    is_casespecific: false,
+    is_hierarchical: false,
+    tone: 'casual',
+    topic: 'supplimentary'
+  },{
+    question: 'Alright, that’s all I need to know. Let me get the assessment ready',
+    response: 'Ok, thank you',
+    options: null,
+    'input-type': 'choice',
+    is_casespecific: false,
+    is_hierarchical: false,
+    tone: 'casual',
+    topic: 'user-ratings'
+  }]
 };
 
 const actions = {
-  async fetchSuggestions({ commit }) {
-    const res = await apiCore.getParams();
-    const data = {}
+  async fetchSuggestions({ commit }, id) {
+    const res = await apiCore.getQuestionsByThreadId(id);
+
     if (res.data) {
-      const params = res.data.data.reduce((obj, value) => {
-        const type = value.type
-        if (data.hasOwnProperty(type)) {
-          data[type].push(value)
-        } else {
-          data[type] = []
-        }
-
-        return {
-          ...obj,
-          [type]: data[type]
-        }
-      })
-
       commit('fetchSuggestions', {
-        data: data,
+        data: res.data,
         meta: res.meta
       })
     }

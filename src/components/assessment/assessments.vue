@@ -1,84 +1,81 @@
 <template>
   <v-container
-    class="fluid px-0"
+    class="fluid px-0 no-padding"
   >
-  <v-layout column>
-    <v-flex xs12>
-      <v-flex xs10 offset-xs1>
-        <v-layout row wrap>
-          <v-flex xs12>
-            <v-layout row>
-              <v-flex xs10>
-                <div class="display-2"> Assessments </div>
-              </v-flex>
-              <v-flex xs2>
-                <v-btn class="right" type="button" color="success" @click.stop="initialize()">New Assessment</v-btn>
-              </v-flex>
-            </v-layout>
-          </v-flex>
-        </v-layout>
-      </v-flex>
-    </v-flex>
-  </v-layout>
-  <v-layout row wrap my-3>
-      <v-flex xs10 offset-xs1 v-if="msgData.data.length">
-        <v-card>
-          <v-container
-            fluid
-            grid-list-lg
+    <v-layout row wrap my-3>
+      
+      <v-flex class="assessment-section" column v-if="msgData.data.length">
+        <div class="my-3 hidden--mobile">
+          <router-link
+            to="#"
+            class="white--text btn-create-assessment page-title my-3"
+            @click.native="initialize()"
           >
-            <template v-for="(card, idx) in msgData.data">
-              <v-layout row wrap v-bind:key="idx">
-                <v-flex xs12>
-                  <v-card elevation-3>
-                    <v-container fluid grid-list-lg>
-                      <v-layout row>
-                        <v-flex
-                          xs2
-                          @click.stop="toRoute('view', {id: card.id, query: card.attributes})"
-                          style="cursor: pointer"
-                        >
-                          <v-img
-                            src="/static/img/user_64.png"
-                            height="100px"
-                            width="100px"
-                            style="border-radius: 50%;"
-                            contain
-                          ></v-img>
-                        </v-flex>
-                        <v-flex xs10>
-                          <div
-                            class="title"
-                            @click.stop="toRoute('view', {id: card.id, query:card.attributes})"
-                            style="cursor: pointer"
-                          >
-                            {{dateFormat(card.attributes.created_timestamp)}} <br>
-                            <span class="caption grey--text"> {{card.relationships.user.data.id}} </span>
-                          </div>
-                        </v-flex>
-                      </v-layout>
-                    </v-container>
-                  </v-card>
-                </v-flex>
+            New Assessment
+          </router-link>
+        </div>
+        <div
+          class="container-fluid"
+          grid-list-lg
+        >
+          <template v-for="(card, idx) in msgData.data">
+            <v-layout row wrap v-bind:key="idx">
+              <v-layout
+                row
+                class="assessment-item"
+              >
+                <div
+                  class="assessment-item__title"
+                  @click.stop="toRoute('view', {id: card.id, query: card.attributes})"
+                  style="cursor: pointer"
+                >
+                  <div
+                    color="grey lighten-4"
+                  >
+                    <img
+                      src="/static/img/1.png"
+                      class="avatar-img"
+                      alt="avatar"
+                    >
+                  </div>
+                </div>
+                <div class="assessment-item__description">
+                  <div
+                    class="page-title"
+                    @click.stop="toRoute('view', {id: card.id, query:card.attributes})"
+                    style="cursor: pointer"
+                  >
+                    {{dateFormat(card.attributes.created_timestamp)}} <br>
+                    <span class="grey--text page-description"> {{getUsernameOfThread(idx)}} </span>
+                  </div>
+                </div>
               </v-layout>
-            </template>
-          </v-container>
-        </v-card>
-        <v-card>
-        <v-card-text v-if="msgData.data.length">
-          <v-pagination
-            v-model="msgData.page"
-            :length="msgData.pages"
-            @input="onPageChange"
-          ></v-pagination>
-        </v-card-text>
-      </v-card>
+            </v-layout>
+          </template>
+        </div>
+        <div>
+          <div v-if="msgData.data.length">
+            <v-pagination
+              v-model="msgData.page"
+              :length="msgData.pages"
+              @input="onPageChange"
+            ></v-pagination>
+          </div>
+        </div>
+        <div class="my-3 hidden--desktop">
+          <router-link
+            to="#"
+            class="white--text btn-create-assessment my-3"
+            @click.native="initialize()"
+          >
+            New Assessment
+          </router-link>
+        </div>
       </v-flex>
     </v-layout>
   </v-container>
 </template>
 <script>
-import { mapActions } from 'vuex';
 import Assessment from '@/services/assessment'
 export default {
   name: 'Home',
@@ -86,7 +83,6 @@ export default {
   },
   mounted () {
     this.getAssessments()
-    this.fetchSuggestions()
   },
   data: () => ({
     assessment: new Assessment(),
@@ -99,9 +95,6 @@ export default {
     months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
   }),
   methods: {
-    ...mapActions('assessments', [
-      'fetchSuggestions'
-    ]),
     toRoute (rname, rparams = {}, query = {}) {
       this.$router.push({ name: rname, params: rparams, query: query })
     },
@@ -115,12 +108,11 @@ export default {
     },
     getAssessments () {
       this.assessment.getThreads(this.msgData.page).then(res => {
-        console.log(res)
         if (res.data != null && res.meta) {
           this.msgData.data = res.data
+          this.msgData.included = res.included
           this.msgData.page = res.meta.pagination.page
           this.msgData.pages = res.meta.pagination.pages
-          console.log(this.msgData)
         }
       })
     },
@@ -130,7 +122,32 @@ export default {
     dateFormat (date) {
       let newDate = new Date(date)
       return this.months[newDate.getMonth()] + ' ' + newDate.getDay()
+    },
+    getUsernameOfThread (idx) {
+      return this.msgData.included[0].attributes.username
     }
   }
 }
 </script>
+<style scoped lang="scss">
+.assessment-section {
+  max-width: 650px;
+  margin: auto;
+}
+
+.assessment-item {
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #F0F0F0;
+
+  .assessment-item__description {
+    margin-left: 20px;
+  }
+
+  .avatar-img {
+    width: 67px;
+    height: 67px;
+    border-radius: 50%;
+  }
+}
+</style>
