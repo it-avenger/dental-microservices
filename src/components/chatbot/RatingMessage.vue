@@ -45,7 +45,7 @@ export default {
     },
     onChange (val) {
         // debugger
-        // this.$parent.$parent.$parent.$parent.onMessageWasSent(this.data)
+        this.$parent.$parent.$parent.$parent.onMessageWasSent(this.data)
     }
   }
 }

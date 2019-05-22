@@ -35,7 +35,17 @@ const initialState = {
     is_casespecific: false,
     is_hierarchical: false,
     tone: 'casual',
-    topic: 'user-ratings'
+    topic: 'prediction'
+  }, {
+    question: "Rembember that above suggestions are guiding. If you are concerned, you should visit your dentist. We are always looking to improve our services, so please leave your feedback:",
+    response: 'Ok, thank you',
+    options: null,
+    'input-type': 'choice',
+    is_casespecific: false,
+    is_hierarchical: false,
+    rating: 0,
+    tone: 'casual',
+    topic: 'user-rating',
   }]
 };
 
