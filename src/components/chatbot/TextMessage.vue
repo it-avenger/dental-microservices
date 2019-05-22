@@ -26,9 +26,6 @@ export default {
       required: true
     }
   },
-  mounted () {
-    console.log('message text: ', this.data)
-  },
   computed: {
     messageText () {
       const escaped = escapeGoat.htmlEscape(this.data.text)

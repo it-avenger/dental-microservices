@@ -113,7 +113,7 @@ class Assessment {
 
   getQuestionsByThreadId(threadId) {
     return new Promise((resolve, reject) => {
-      GETApi(`${types.BASE_URL}/chatbot-assessments/1/questions_responses/`)
+      GETApi(`${types.BASE_URL}/chatbot-assessments/${threadId}/questions_responses/`)
         .then((response) => {
           if (response.success) {
             return resolve(response.data);
