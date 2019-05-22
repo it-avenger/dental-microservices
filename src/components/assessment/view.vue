@@ -179,6 +179,8 @@ export default {
       })
 
       this.me = this.threadData.data.relationships.user.data.id
+
+      // prepopulated the messages are sent on this thread
       if (this.threadData.data.relationships.messages.data.length > 0) {
         let msgData = this.threadData.included.filter(msg => {
           return msg.type === 'messages'
@@ -196,7 +198,7 @@ export default {
               }
 
               if (topic !== 'initial_response'){
-                console.log('++++++++++++ :: ', msg, this.questions, this.questionHash, this.step)
+                // main questions (from api)
                 if (this.questionHash.hasOwnProperty(topic)) {
                   
                   let suggestions = {}
@@ -260,11 +262,12 @@ export default {
         }
 
         if (next !== null) {
+          // ask a question after user write a message (cause only user's message are saved in db)
           if (this.questionHash.hasOwnProperty(next)) {
             let suggestions = {}
             if (next === 'symptoms') {
               const res = await this.assessment.getSymptoms(this.questionHash['age-groups'].id, this.questionHash['body-structures'].id)
-              debugger
+
               if (res.data) {
                 const data = await res.included.map(item => {
                   return {...item.attributes, parent: '0'} 
@@ -307,176 +310,198 @@ export default {
       }
     },
     async onMessageWasSent (msg) {
-      debugger
-      if (this.step < this.questions.length + this.additionalQuestions.length - 1) {
-        if (this.step == -1) {
-          let newMessage = Object.assign({}, msg)
-          newMessage.data.topic = 'initial_response'
-
-          this.saveMessage(newMessage)
-
-          const responseMessage = {
-            author: this.participants[0].id,
-            data: {
-              text: this.threadData.data.attributes.initial_response,
-              topic: 'initial_response'
-            },
-            type: 'text'
-          }
-
-          this.messageList.push(responseMessage)
-        } else {
-          this.saveMessage(msg)
-          let responseMessage = {}
-
-          if (this.step < this.questions.length) {
-            responseMessage = {
-              author: this.participants[0].id,
-              data: {
-                text: this.questions[this.step].attributes.response,
-                topic: this.questions[this.step].attributes.topic
-              },
-              type: 'text'
-            }
-
-            this.assessmentParams[this.questions[this.step].attributes.topic] = {
-              id: msg.data.id,
-              name: msg.data.text
-            }
-          } else {
-            responseMessage = {
-              author: this.participants[0].id,
-              data: {
-                text: this.additionalQuestions[this.step - this.questions.length].response
-              },
-              type: 'text'
-            }
-
-            this.assessmentParams[this.additionalQuestions[this.step - this.questions.length].topic] = {
-              id: msg.data.id,
-              name: msg.data.text
-            }
-          }
-
-          this.messageList.push(responseMessage)
+      console.log(msg)
+      this.messageList.push({
+        type: 'rating',
+        author: this.participants[0].id,
+        data: {
+          text: 'aaa',
+          rating: 1,
+          data: [{
+            name: 'Dead tooth',
+            description: 'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes.'
+          }, {
+            name: 'Erosion of tooth',
+            description: 'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes.'
+          }, {
+            name: 'Abrasion',
+            description: 'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes.'
+          }, {
+            name: 'Lyoplaykia',
+            description: 'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes.'
+          }]
         }
+      })
 
-        if (this.step < this.questions.length - 1) {
-          // add a message in channel when chatbot asking a question
-          let suggestions = {}
-          if (this.questions[this.step + 1].attributes.topic != 'symptoms') {
-            suggestions = this.getSuggestionListFromProps(this.questions[this.step + 1].attributes)
-          } else {
+      // if (this.step < this.questions.length + this.additionalQuestions.length - 1) {
+      //   if (this.step == -1) {
+      //     let newMessage = Object.assign({}, msg)
+      //     newMessage.data.topic = 'initial_response'
 
-            const res = await this.assessment.getSymptoms(this.assessmentParams['age-groups'].id, this.assessmentParams['body-structures'].id)
+      //     this.saveMessage(newMessage)
 
-            if (res.data) {
-              const data = await res.included.map(item => {
-                return {...item.attributes, parent: '0'} 
-              })
+      //     const responseMessage = {
+      //       author: this.participants[0].id,
+      //       data: {
+      //         text: this.threadData.data.attributes.initial_response,
+      //         topic: 'initial_response'
+      //       },
+      //       type: 'text'
+      //     }
 
-              suggestions = {
-                data: data,
-                multiple: this.questions[this.step + 1].attributes['input-type'] === 'choice' ? false : true
-              }
+      //     this.messageList.push(responseMessage)
+      //   } else {
+      //     this.saveMessage(msg)
+      //     let responseMessage = {}
 
-            }
-          }
+      //     if (this.step < this.questions.length) {
+      //       responseMessage = {
+      //         author: this.participants[0].id,
+      //         data: {
+      //           text: this.questions[this.step].attributes.response,
+      //           topic: this.questions[this.step].attributes.topic
+      //         },
+      //         type: 'text'
+      //       }
 
-          const questionMessage = {
-            author: this.participants[0].id,
-            data: {
-              text: this.questions[this.step + 1].attributes.question,
-              topic: this.questions[this.step + 1].attributes.topic
-            },
-            type: 'text',
-            suggestions: suggestions
-          }
+      //       this.assessmentParams[this.questions[this.step].attributes.topic] = {
+      //         id: msg.data.id,
+      //         name: msg.data.text
+      //       }
+      //     } else {
+      //       responseMessage = {
+      //         author: this.participants[0].id,
+      //         data: {
+      //           text: this.additionalQuestions[this.step - this.questions.length].response
+      //         },
+      //         type: 'text'
+      //       }
 
-          this.messageList.push(questionMessage)
+      //       this.assessmentParams[this.additionalQuestions[this.step - this.questions.length].topic] = {
+      //         id: msg.data.id,
+      //         name: msg.data.text
+      //       }
+      //     }
 
-        } else {
-          // additional questions
-          let suggestions = {}
-          if (this.additionalQuestions[this.step - this.questions.length + 1].topic === 'user-ratings') {
-            const threadId = this.$route.params.id
+      //     this.messageList.push(responseMessage)
+      //   }
 
-            const prediction = this.assessment.getPredictons({
-              message_thread: threadId,
-              target_individual: this.assessmentParams['family-members'].name,
-              review_by_dentist: false,
-              review_by_algorithm: false,
-              gender: this.assessmentParams.genders.id,
-              body_structure: this.assessmentParams['body-structures'].id,
-              age_group: this.assessmentParams['age-groups'].id,
-              symptoms: this.assessmentParams.symptoms.id,
-              pain_level: this.assessmentParams['pain-levels'].id
-            })
+      //   if (this.step < this.questions.length - 1) {
+      //     // add a message in channel when chatbot asking a question
+      //     let suggestions = {}
+      //     if (this.questions[this.step + 1].attributes.topic != 'symptoms') {
+      //       suggestions = this.getSuggestionListFromProps(this.questions[this.step + 1].attributes)
+      //     } else {
 
-            suggestions = {
-              data: [{
-                id: 1,
-                name: 'Dental caries',
-                parent: '0'
-              },
-              {
-                id: 2,
-                name: 'Bleeding gums',
-                parent: '0'
-              },
-              {
-                id: 3,
-                name: 'Dental caries - lip',
-                parent: '1'
-              },
-              {
-                id: 4,
-                name: 'Dental caries - mouth',
-                parent: '1'
-              },
-              {
-                id: 5,
-                name: 'Dental caries',
-                parent: '2'
-              },
-              {
-                id: 6,
-                name: 'Dental caries',
-                parent: '2'
-              }],
-              multiple: false
-            }
-          }
+      //       const res = await this.assessment.getSymptoms(this.assessmentParams['age-groups'].id, this.assessmentParams['body-structures'].id)
+
+      //       if (res.data) {
+      //         const data = await res.included.map(item => {
+      //           return {...item.attributes, parent: '0'} 
+      //         })
+
+      //         suggestions = {
+      //           data: data,
+      //           multiple: this.questions[this.step + 1].attributes['input-type'] === 'choice' ? false : true
+      //         }
+
+      //       }
+      //     }
+
+      //     const questionMessage = {
+      //       author: this.participants[0].id,
+      //       data: {
+      //         text: this.questions[this.step + 1].attributes.question,
+      //         topic: this.questions[this.step + 1].attributes.topic
+      //       },
+      //       type: 'text',
+      //       suggestions: suggestions
+      //     }
+
+      //     this.messageList.push(questionMessage)
+
+      //   } else {
+      //     // additional questions
+      //     let suggestions = {}
+      //     if (this.additionalQuestions[this.step - this.questions.length + 1].topic === 'user-ratings') {
+      //       const threadId = this.$route.params.id
+
+      //       const prediction = this.assessment.getPredictons({
+      //         message_thread: threadId,
+      //         target_individual: this.assessmentParams['family-members'].name,
+      //         review_by_dentist: false,
+      //         review_by_algorithm: false,
+      //         gender: this.assessmentParams.genders.id,
+      //         body_structure: this.assessmentParams['body-structures'].id,
+      //         age_group: this.assessmentParams['age-groups'].id,
+      //         symptoms: this.assessmentParams.symptoms.id,
+      //         pain_level: this.assessmentParams['pain-levels'].id
+      //       })
+
+      //       suggestions = {
+      //         data: [{
+      //           id: 1,
+      //           name: 'Dental caries',
+      //           parent: '0'
+      //         },
+      //         {
+      //           id: 2,
+      //           name: 'Bleeding gums',
+      //           parent: '0'
+      //         },
+      //         {
+      //           id: 3,
+      //           name: 'Dental caries - lip',
+      //           parent: '1'
+      //         },
+      //         {
+      //           id: 4,
+      //           name: 'Dental caries - mouth',
+      //           parent: '1'
+      //         },
+      //         {
+      //           id: 5,
+      //           name: 'Dental caries',
+      //           parent: '2'
+      //         },
+      //         {
+      //           id: 6,
+      //           name: 'Dental caries',
+      //           parent: '2'
+      //         }],
+      //         multiple: false
+      //       }
+      //     }
           
-          const questionMessage = {
-            author: this.participants[0].id,
-            data: {
-              text: this.additionalQuestions[this.step - this.questions.length + 1].question,
-              topic: this.additionalQuestions[this.step - this.questions.length + 1].topic
-            },
-            type: 'text',
-            suggestions: suggestions
-          }
+      //     const questionMessage = {
+      //       author: this.participants[0].id,
+      //       data: {
+      //         text: this.additionalQuestions[this.step - this.questions.length + 1].question,
+      //         topic: this.additionalQuestions[this.step - this.questions.length + 1].topic
+      //       },
+      //       type: 'text',
+      //       suggestions: suggestions
+      //     }
 
-          this.messageList.push(questionMessage)
+      //     this.messageList.push(questionMessage)
 
-        }
+      //   }
 
-        this.step = this.step + 1
-      } else {
-        const responseMessage = {
-          author: this.participants[0].id,
-          data: {
-            text: this.additionalQuestions[this.step - this.questions.length].response,
-            topic: this.additionalQuestions[this.step - this.questions.length].topic
-          },
-          type: 'text'
-        }
+      //   this.step = this.step + 1
+      // } else {
+      //   const responseMessage = {
+      //     author: this.participants[0].id,
+      //     data: {
+      //       text: this.additionalQuestions[this.step - this.questions.length].response,
+      //       topic: this.additionalQuestions[this.step - this.questions.length].topic
+      //     },
+      //     type: 'text'
+      //   }
 
-        this.messageList.push(responseMessage)
+      //   this.messageList.push(responseMessage)
 
-        this.disableUserInput = true
-      }
+      //   this.disableUserInput = true
+      // }
 
     },
     getSuggestionListFromProps (props) {
