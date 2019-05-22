@@ -3,21 +3,22 @@
       <button
         v-if="this.currentPage !== 0"
         type="button"
-        class="sc-suggestions-element"
+        class="sc-suggestions-element arrow"
         :style="baseStyles"
         @click="onChangePage(false)"
       >
-        <v-icon>add</v-icon>
+        <v-icon>mdi-chevron-left</v-icon>
       </button>
-      <button class="sc-suggestions-element" v-for="(suggestion, idx) in filteredSuggestion" @click="clicked(suggestion)"
+      <button class="sc-suggestions-element" v-for="(suggestion, idx) in filteredSuggestion" @click="clicked($event, suggestion)"
       :style="baseStyles" :key="idx">{{suggestion.name}}&nbsp;</button>
       <button
         v-if="this.currentPage !== this.totalPage - 1"
-        type="button" class="sc-suggestions-element"
+        type="button"
+        class="sc-suggestions-element arrow"
         :style="baseStyles"
         @click="onChangePage(true)"
       >
-        <v-icon>add</v-icon>
+        <v-icon>mdi-chevron-right</v-icon>
       </button>
     </div>
     <div class="sc-suggestions-row" v-else :style="{background: colors.messageList.bg}">
@@ -26,11 +27,11 @@
           <button
             v-if="this.currentPage !== 0"
             type="button"
-            class="sc-suggestions-element"
+            class="sc-suggestions-element arrow"
             :style="baseStyles"
             @click="onChangePage(false)"
           >
-            <v-icon>add</v-icon>
+            <v-icon>mdi-chevron-left</v-icon>
           </button>
           <!-- <v-flex xs12 sm4 md4 v-for="(suggestion, idx) in suggestionData"  :key="idx">
             <button type="button" class="sc-suggestions-element" @click="clicked(suggestion)"
@@ -39,7 +40,7 @@
           <button
             class="sc-suggestions-element"
             v-for="(suggestion, idx) in filteredSuggestion"
-            @click="clicked(suggestion)"
+            @click="clicked($event, suggestion)"
             :style="baseStyles"
             :key="idx"
           >
@@ -47,11 +48,12 @@
           </button>
           <button
             v-if="this.currentPage !== this.totalPage - 1"
-            type="button" class="sc-suggestions-element"
+            type="button"
+            class="sc-suggestions-element arrow"
             :style="baseStyles"
             @click="onChangePage(true)"
           >
-            <v-icon>add</v-icon>
+            <v-icon>mdi-chevron-right</v-icon>
           </button>
         </v-flex>
         <v-flex xs12>
@@ -118,7 +120,6 @@ export default {
       }
     },
     currentPage: function () {
-
       if (this.suggestionData.length < this.number_per_page) {
         this.filteredSuggestion = this.suggestionData
       } else {
@@ -127,7 +128,13 @@ export default {
     }
   },
   methods: {
-    clicked (suggestion) {
+    clicked (event, suggestion) {
+
+      if (event.target.className.indexOf('active') === -1) {
+        event.target.className = event.target.className + ' active'
+      } else {
+        event.target.className = event.target.className.replace(' active', '')
+      }
       if (this.multiple) {
         suggestion.selected = !suggestion.selected
         let cur = this.selectedArr.indexOf(suggestion.id)
@@ -170,7 +177,6 @@ export default {
     },
     onChangePage (isForward=true) {
       if (this.suggestionData.length > this.number_per_page) {
-        console.log(this.currentPage, this.totalPage)
         if (isForward) {
           if (this.currentPage < this.totalPage - 1) {
             this.currentPage = this.currentPage + 1
@@ -186,7 +192,7 @@ export default {
 }
 </script>
 
-<style>
+<style lang="scss">
 .sc-suggestions-row {
   text-align: center;
   background: inherit;
@@ -196,11 +202,30 @@ export default {
   margin: 3px;
   padding: 5px 10px 5px 10px;
   border: 1px solid;
-  border-radius: 15px;
+  border-radius: 5px !important;
   font-size: 14px;
   background: inherit;
   cursor: pointer;
   border-radius: 4.8px;
   color: #fff;
+
+  i {
+    width: 15px;
+    height: 15px;
+    color: #fff !important;
+  }
+
+  &.arrow {
+    background-color: $light-blue !important;
+
+    &:hover {
+      opacity: 0.6;
+    }
+  }
+}
+
+.sc-suggestions-element.active {
+  background-color: $light-blue !important;
+  color: #fff !important;
 }
 </style>

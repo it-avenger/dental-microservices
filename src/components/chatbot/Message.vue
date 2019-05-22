@@ -13,6 +13,8 @@
       <FileMessage v-else-if="message.type === 'file'" :data="message.data" :messageColors="determineMessageColors()" />
       <TypingMessage v-else-if="message.type === 'typing'" :messageColors="determineMessageColors()" />
       <SystemMessage v-else-if="message.type === 'system'" :data="message.data" :messageColors="determineMessageColors()" />
+      <ListMessage v-else-if="message.type === 'list'" :data="message.data" />
+      <RatingMessage v-else-if="message.type === 'rating'" :data="message.data" />
       <v-rating v-if="message.type === 'text' && message.data.rating" color="red darken-3"
             background-color="red darken-1" readonly v-model="message.data.rating"></v-rating>
       <div v-if="message.type !== 'system' && isUser" :title="authorName" class="sc-message--avatar" :style="{
@@ -24,10 +26,12 @@
 
 <script>
 import TextMessage from './TextMessage.vue'
+import ListMessage from './ListMessage.vue'
 import FileMessage from './FileMessage.vue'
 import EmojiMessage from './EmojiMessage.vue'
 import TypingMessage from './TypingMessage.vue'
 import SystemMessage from './SystemMessage.vue'
+import RatingMessage from './RatingMessage.vue'
 import chatIcon from './assets/chat-icon.svg'
 
 export default {
@@ -41,7 +45,9 @@ export default {
     FileMessage,
     EmojiMessage,
     TypingMessage,
-    SystemMessage
+    SystemMessage,
+    ListMessage,
+    RatingMessage
   },
   props: {
     message: {

@@ -7,6 +7,8 @@ import 'vuetify/dist/vuetify.min.css';
 import store from './store';
 import router from './router';
 import VTooltip from 'v-tooltip';
+import '@mdi/font/css/materialdesignicons.css'
+
 // components
 import ListCards from './components/shared/list_cards';
 import GridCards from './components/shared/grid_cards';
@@ -41,6 +43,7 @@ window.pageSize = 12;
 
 Vue.use(VTooltip);
 Vue.use(Vuetify, {
+  iconfont: 'mdi',
   theme: {
     primary: '#03A9F4',
     secondary: '#03A9F4',
