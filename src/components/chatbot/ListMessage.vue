@@ -59,7 +59,6 @@ export default {
   }),
   computed: {
     listData: function () {
-      console.log('$$$$$$$$$$: ', this.data.data)
       if (this.data.data && this.data.data.length > 0) {
         return this.data.data.slice(0,2)
       }

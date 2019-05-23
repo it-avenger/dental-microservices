@@ -5,6 +5,8 @@
       <div class="message-rating__rating">
         <v-rating
           v-model="rating"
+          :emptyIcon="emptyIcon"
+          :fullIcon="fullIcon"
           color="#6bb3da"
           background-color="#6bb3da"
           @click.native="onChange($event)"
@@ -58,16 +60,12 @@ export default {
 }
 
 .message-rating__content {
-    padding: 10px;
-    border-bottom: 1px solid #E5E5E5;
+  padding: 10px;
+  border-bottom: 1px solid #E5E5E5;
 }
 
 .message-rating__rating {
-    padding: 10px
-}
-
-.v-rating .v-icon {
-    padding: 0.45rem !important;
+  padding: 10px
 }
 
 </style>

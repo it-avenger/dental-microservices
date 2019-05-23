@@ -37,11 +37,9 @@ export const POSTApi = (url, data, params = null) => {
 
   return axios.post(url, {data}, jsonParams)
     .then(res => {
-      console.log('=========== post api =======', res)
       return { success: true, data: res.data }
     })
     .catch(err => {
-      console.log('$$$$$$ err $$$$$$$$$$', err)
       return { success: false, err }
     });
 };
