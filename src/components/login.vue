@@ -38,6 +38,7 @@
           <v-text-field
             v-model="password"
             :rules="pwdRules"
+            type="password"
             class="default-btn mb-1"
             solo
             background-color="#fff"

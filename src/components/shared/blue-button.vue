@@ -25,9 +25,9 @@ export default {
     url: String,
     text: String,
     className: String,
-    onClick: Function,
-  },
-};
+    onClick: Function
+  }
+}
 </script>
 
 <style lang="scss">
@@ -47,6 +47,8 @@ export default {
 }
 
 @media (max-width: 768px) {
-  font-size: 18px;
+  .btn-create-assessment {
+    font-size: 18px;
+  }
 }
 </style>

@@ -294,6 +294,7 @@ export default {
             }
 
             this.messageList.push(questionMessage)
+
           } else {
             this.messageList.push({
               type: 'text',
@@ -325,7 +326,8 @@ export default {
           let newMessage = Object.assign({}, msg)
           newMessage.data.topic = 'initial_response'
 
-          this.saveMessage(newMessage)
+          // this.saveMessage(newMessage)
+          this.messageList.push(newMessage)
 
           const responseMessage = {
             author: this.participants[0].id,

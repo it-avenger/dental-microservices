@@ -4,7 +4,7 @@ module.exports = {
     host: 'localhost',
     port: 8085, // CHANGE YOUR PORT HERE!
     https: false,
-    hotOnly: false,
+    hotOnly: false
   },
   css: {
     loaderOptions: {

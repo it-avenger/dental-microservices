@@ -105,7 +105,7 @@ export default {
     // }, {immediate: true})
   },
   methods: {
-    toRoute(rname, rparams = {}, query = {}) {
+    toRoute (rname, rparams = {}, query = {}) {
       this.dialog = true;
       this.$router.push({ name: rname, params: rparams, query });
     },
