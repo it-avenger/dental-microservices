@@ -114,7 +114,8 @@ export default {
     questions: [],
     questionHash: {},
     additionalQuestionHash: {},
-    assessmentParams: {}
+    assessmentParams: {},
+    createdAssessmentId: 3,
   }),
   computed: {
     ...mapState('assessments', [
@@ -187,9 +188,17 @@ export default {
         let msgData = this.threadData.included.filter(msg => {
           return msg.type === 'messages'
         })
-        if (msgData.length > 0 && this.questionHash && this.additionalQuestionHash) {
+        if (
+          msgData.length > 0 &&
+          Object.keys(this.questionHash).length > 0 &&
+          Object.keys(this.additionalQuestionHash).length > 0
+        ) {
           msgData.forEach(async (msg, index) => {
-            if (msg.relationships.sender.data.id === this.me && msg.attributes.topic && msg.attributes.topic !== '' && msg.attributes.topic !== 'undefined' ) {
+            if (
+              msg.relationships.sender.data.id === this.me &&
+              msg.attributes.topic && msg.attributes.topic !== '' &&
+              msg.attributes.topic !== 'undefined'
+            ) {
               const topic = msg.attributes.topic
 
               if (msg.attributes.topic === 'initial_response') {
@@ -200,6 +209,7 @@ export default {
 
               if (topic !== 'initial_response'){
                 // main questions (from api)
+
                 if (this.questionHash.hasOwnProperty(topic)) {
                   
                   let suggestions = {}
@@ -326,7 +336,7 @@ export default {
           let newMessage = Object.assign({}, msg)
           newMessage.data.topic = 'initial_response'
 
-          // this.saveMessage(newMessage)
+          this.saveMessage(newMessage)
           this.messageList.push(newMessage)
 
           const responseMessage = {
@@ -337,7 +347,6 @@ export default {
             },
             type: 'text'
           }
-
           this.messageList.push(responseMessage)
         } else {
           this.saveMessage(msg)
@@ -382,6 +391,7 @@ export default {
             suggestions = this.getSuggestionListFromProps(this.questions[this.step + 1].attributes)
             
           } else {
+
             this.showTypingIndicator = 'true'
             const res = await this.assessment.getSymptoms(this.assessmentParams['age-groups'].id, this.assessmentParams['body-structures'].id)
             this.showTypingIndicator = ''
@@ -393,11 +403,14 @@ export default {
 
               suggestions = {
                 data: data,
-                multiple: this.questions[this.step + 1].attributes['input-type'] === 'choice' ? false : true
+                multiple: this.questions[this.step + 1].attributes['input-type'] === 'choice' ? false : true,
+                topic: 'symptoms'
               }
 
             }
           }
+
+          console.log('------ suggestions -------', suggestions)
 
           const questionMessage = {
             author: this.participants[0].id,
@@ -430,75 +443,81 @@ export default {
             })
             this.showTypingIndicator = ''
             console.log('========: ', prediction)
+            debugger
+            const predictionItem = await this.assessment.view(prediction.data.id)
+            console.log('========: ', predictionItem)
+            const predictionScoreList = await this.assessment.getPredictionScoresById(predictionItem.data.id)
+            console.log('========: ', predictionScoreList)
 
-            suggestions = {
-              data: [{
-                id: 1,
-                name: 'Dental caries',
-                parent: '0'
-              },
-              {
-                id: 2,
-                name: 'Bleeding gums',
-                parent: '0'
-              },
-              {
-                id: 3,
-                name: 'Dental caries - lip',
-                parent: '1'
-              },
-              {
-                id: 4,
-                name: 'Dental caries - mouth',
-                parent: '1'
-              },
-              {
-                id: 5,
-                name: 'Dental caries',
-                parent: '2'
-              },
-              {
-                id: 6,
-                name: 'Dental caries',
-                parent: '2'
-              }],
-              multiple: false
+            let listOptionData = []
+            if (predictionScoreList.included) {
+              predictionScoreList.included.forEach(async score => {
+                const scoreCategry = await this.assessment.getCategoryById(score.id)
+                if (scoreCategry.data) {
+                  listOptionData.push({
+                    name: scoreCategry.data.attributes.name,
+                    uuid: scoreCategry.data.attributes.uuid,
+                    description: scoreCategry.data.attributes.description
+                  })
+                }
+
+              })
             }
-          }
-          
-          const questionMessage = {
+            debugger
+            const questionMessage = {
+              author: this.participants[0].id,
+              data: {
+                text: this.additionalQuestions[this.step - this.questions.length + 1].question,
+                topic: this.additionalQuestions[this.step - this.questions.length + 1].topic,
+                data: listOptionData
+              },
+              type: 'list',
+            }
+
+            this.messageList.push(questionMessage)
+
+            let data = {
+              text: 'Rembember that above suggestions are guiding. If you are concerned, you should visit your dentist. We are always looking to improve our services, so please leave your feedback:',
+              topic: 'user-rating',
+              rating: 0
+            }
+            const responseMessage = {
+              author: this.participants[0].id,
+              data: data,
+              type: 'rating'
+            }
+
+            this.messageList.push(responseMessage)
+
+          } else {
+            const questionMessage = {
             author: this.participants[0].id,
-            data: {
-              text: this.additionalQuestions[this.step - this.questions.length + 1].question,
-              topic: this.additionalQuestions[this.step - this.questions.length + 1].topic
-            },
-            type: 'text',
-            suggestions: suggestions
+              data: {
+                text: this.additionalQuestions[this.step - this.questions.length + 1].question,
+                topic: this.additionalQuestions[this.step - this.questions.length + 1].topic
+              },
+              type: 'text',
+            }
+
+            this.messageList.push(questionMessage)
           }
-
-          this.messageList.push(questionMessage)
-
         }
 
         this.step = this.step + 1
       } else {
-        let data = {
-          text: this.additionalQuestions[this.step - this.questions.length + 1].response,
-          topic: this.additionalQuestions[this.step - this.questions.length + 1].topic
-        }
+        if (msg.topic && msg.topic === 'user-rating') {
+          this.submitRating(mgs.rating, this.createdAssessmentId)
+          const lastMessage = {
+            author: this.participants[0].id,
+            data: {
+              text: 'Ok, thank you'
+            },
+            type: 'text',
+          }
 
-        if (this.additionalQuestions[this.step - this.questions.length + 1].topic === 'user-rating') {
-          data.rating = this.additionalQuestions[this.step - this.questions.length + 1]
+          this.messageList.push(lastMessage)
+          this.disableUserInput = true
         }
-        const responseMessage = {
-          author: this.participants[0].id,
-          data: data,
-          type: 'text'
-        }
-
-        this.messageList.push(responseMessage)
-
-        this.disableUserInput = true
       }
 
     },
@@ -545,6 +564,7 @@ export default {
       this.isChatOpen = false
     },
     async saveMessage (msg) {
+      console.log('------saveMesage ----------:', msg)
       this.messageList.push(msg)
 
       let sender = ''
@@ -567,14 +587,12 @@ export default {
       formData.append('is_read', true)
 
       const createResponse = await this.assessment.createMessage(formData)
-
-      console.log('== createResponse ==', createResponse)
     },
     getOptionId(questionId, optionText) {
       let optionId = null
 
       this.questions.forEach((question) => {
-        if (question.id === questionId) {
+        if (question.id === questionId && question.attributes.options) {
           question.attributes.options.data.forEach((option) => {
             if (option.attributes.name === optionText) {
               optionId = option.id

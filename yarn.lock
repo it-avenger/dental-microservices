@@ -1043,6 +1043,17 @@
     eslint-import-resolver-webpack "^0.10.1"
     eslint-plugin-import "^2.14.0"
 
+"@vue/eslint-config-standard@^4.0.0":
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/@vue/eslint-config-standard/-/eslint-config-standard-4.0.0.tgz#6be447ee674e3b0f733c584098fd9a22e6d76fcd"
+  integrity sha512-bQghq1cw1BuMRHNhr3tRpAJx1tpGy0QtajQX873kLtA9YVuOIoXR7nAWnTN09bBHnSUh2N288vMsqPi2fI4Hzg==
+  dependencies:
+    eslint-config-standard "^12.0.0"
+    eslint-plugin-import "^2.14.0"
+    eslint-plugin-node "^8.0.0"
+    eslint-plugin-promise "^4.0.1"
+    eslint-plugin-standard "^4.0.0"
+
 "@vue/preload-webpack-plugin@^1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@vue/preload-webpack-plugin/-/preload-webpack-plugin-1.1.0.tgz#d768dba004261c029b53a77c5ea2d5f9ee4f3cce"
@@ -3971,7 +3982,7 @@ eslint-plugin-import@^2.14.0, eslint-plugin-import@^2.16.0:
     read-pkg-up "^2.0.0"
     resolve "^1.10.0"
 
-eslint-plugin-node@^8.0.1:
+eslint-plugin-node@^8.0.0, eslint-plugin-node@^8.0.1:
   version "8.0.1"
   resolved "https://registry.yarnpkg.com/eslint-plugin-node/-/eslint-plugin-node-8.0.1.tgz#55ae3560022863d141fa7a11799532340a685964"
   integrity sha512-ZjOjbjEi6jd82rIpFSgagv4CHWzG9xsQAVp1ZPlhRnnYxcTgENUVBvhYmkQ7GvT1QFijUSo69RaiOJKhMu6i8w==
@@ -3983,7 +3994,7 @@ eslint-plugin-node@^8.0.1:
     resolve "^1.8.1"
     semver "^5.5.0"
 
-eslint-plugin-promise@^4.1.1:
+eslint-plugin-promise@^4.0.1, eslint-plugin-promise@^4.1.1:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/eslint-plugin-promise/-/eslint-plugin-promise-4.1.1.tgz#1e08cb68b5b2cd8839f8d5864c796f56d82746db"
   integrity sha512-faAHw7uzlNPy7b45J1guyjazw28M+7gJokKUjC5JSFoYfUEyy6Gw/i7YQvmv2Yk00sUjWcmzXQLpU1Ki/C2IZQ==

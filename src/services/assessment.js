@@ -126,6 +126,36 @@ class Assessment {
     });
   }
 
+  getPredictionScoresById(id) {
+    return new Promise((resolve, reject) => {
+      GETApi(`${types.BASE_URL}/predictions/${id}/?include=prediction-scores`)
+        .then((response) => {
+          if (response.success) {
+            return resolve(response.data);
+          }
+          this.errors.record(response.err.response.data);
+          this.errors.action();
+          reject(response.err);
+          return null;
+        });
+    });
+  }
+
+  getCategoryById(id) {
+    return new Promise((resolve, reject) => {
+      GETApi(`${types.BASE_URL}/categories/${id}`)
+        .then((response) => {
+          if (response.success) {
+            return resolve(response.data);
+          }
+          this.errors.record(response.err.response.data);
+          this.errors.action();
+          reject(response.err);
+          return null;
+        });
+    });
+  }
+
   getSymptoms(ageGroup, bodyStructure) {
     return new Promise((resolve, reject) => {
       GETApi(`${types.BASE_URL}/chatbot-assessments/${ageGroup}:${bodyStructure}/symptoms/`)
@@ -150,7 +180,7 @@ class Assessment {
 
       POSTApi(`${types.BASE_URL}/chatbot-assessments/predict/`, payload)
         .then((response) => {
-          if (reponse.success) {            
+          if (response.success) {            
             resolve(response.data);
           } else {
             reject(response.err);

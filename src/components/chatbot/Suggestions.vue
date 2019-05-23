@@ -145,7 +145,7 @@ export default {
         }
       } else {
         if (!this.filterData(suggestion.id)) {
-          let data = { author: 'me', type: 'text', data: { text: suggestion.name, topic: this.suggestions.topic, id: suggestion.id } }
+          let data = { author: 'me', type: 'text', data: { text: suggestion.name, topic: suggestion.topic, id: suggestion.id } }
           this.$parent._submitSuggestion(data)
         }
       }
