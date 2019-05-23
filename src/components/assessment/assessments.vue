@@ -101,6 +101,7 @@ export default {
     initialize () {
       let formData = { query_term: '' }
       this.assessment.initialize(formData).then(res => {
+        this.onPageChange()
         if (res.data && res.data.type === 'message-threads') {
           this.$router.push({ name: 'support', params: { id: res.data.id } })
         }

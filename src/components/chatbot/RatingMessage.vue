@@ -1,17 +1,15 @@
 <template>
   <v-container>
     <div class="message-rating">
-        <div class="message-rating__content">{{ data.text }}</div>
-        <div class="message-rating__rating">
-            <v-rating
-                v-model="rating"
-                color="#6bb3da"
-                :empty-icon="emptyIcon"
-                :full-icon="fullIcon"
-                background-color="#6bb3da"
-                @click.native="onChange($event)"
-            />
-        </div>
+      <div class="message-rating__content">{{ data.text }}</div>
+      <div class="message-rating__rating">
+        <v-rating
+          v-model="rating"
+          color="#6bb3da"
+          background-color="#6bb3da"
+          @click.native="onChange($event)"
+        />
+      </div>
     </div>
   </v-container>
 </template>
@@ -21,7 +19,7 @@ export default {
   props: {
     data: {
       type: Object,
-      required: true,
+      required: true
     }
   },
   data: () => ({
@@ -33,7 +31,7 @@ export default {
   computed: {
     listData: function () {
       if (this.data.data && this.data.data.length > 0) {
-        return this.data.data.slice(0,2)
+        return this.data.data.slice(0, 2)
       }
 
       return []
@@ -44,8 +42,7 @@ export default {
       this.modal = !this.modal
     },
     onChange (val) {
-        // debugger
-        this.$parent.$parent.$parent.$parent.onMessageWasSent(this.data)
+      this.$parent.$parent.$parent.$parent.onMessageWasSent(this.data)
     }
   }
 }

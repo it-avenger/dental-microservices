@@ -59,35 +59,35 @@ const router = new Router({
 });
 
 router.beforeResolve((to, from, next) => {
-  if (to.name) {
-    store.dispatch('loading', true);
-  }
+  // if (to.name) {
+  //   store.dispatch('loading', true);
+  // }
   next();
 });
 router.afterEach((to, from) => {
-  store.dispatch('loading', false);
+  // store.dispatch('loading', false);
 });
 
-router.beforeEach((to, from, next) => {
-  if (to.matched.some(record => record.meta.Auth)) {
-    // this route requires auth, check if logged in
-    // if not, redirect to login page.
-    store.dispatch('auth/checkAuth');
-    if (!store.getters['auth/isUserAuthenticated']) {
-      next({
-        path: '/signin',
-      });
-    } else {
-      next();
-    }
-  } else {
-    if (store.getters['auth/isUserAuthenticated'] && to.path === '/signin') {
-      next({
-        path: '/',
-      });
-    }
-    next(); // make sure to always call next()!
-  }
-});
+// router.beforeEach((to, from, next) => {
+//   if (to.matched.some(record => record.meta.Auth)) {
+//     // this route requires auth, check if logged in
+//     // if not, redirect to login page.
+//     store.dispatch('auth/checkAuth');
+//     if (!store.getters['auth/isUserAuthenticated']) {
+//       next({
+//         path: '/signin',
+//       });
+//     } else {
+//       next();
+//     }
+//   } else {
+//     if (store.getters['auth/isUserAuthenticated'] && to.path === '/signin') {
+//       next({
+//         path: '/',
+//       });
+//     }
+//     next(); // make sure to always call next()!
+//   }
+// });
 
 export default router;

@@ -36,8 +36,14 @@ export const POSTApi = (url, data, params = null) => {
   };
 
   return axios.post(url, {data}, jsonParams)
-    .then(res => ({ success: true, data: res.data }))
-    .catch(err => ({ success: false, err }));
+    .then(res => {
+      console.log('=========== post api =======', res)
+      return { success: true, data: res.data }
+    })
+    .catch(err => {
+      console.log('$$$$$$ err $$$$$$$$$$', err)
+      return { success: false, err }
+    });
 };
 
 export const DELETEApi = (url) => {
