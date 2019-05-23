@@ -331,6 +331,7 @@ export default {
       })
     },
     async onMessageWasSent (msg) {
+
       if (this.step < this.questions.length + this.additionalQuestions.length - 1) {
         if (this.step == -1) {
           let newMessage = Object.assign({}, msg)
@@ -410,8 +411,6 @@ export default {
             }
           }
 
-          console.log('------ suggestions -------', suggestions)
-
           const questionMessage = {
             author: this.participants[0].id,
             data: {
@@ -442,16 +441,13 @@ export default {
               pain_level: this.assessmentParams['pain-levels'].id
             })
             this.showTypingIndicator = ''
-            console.log('========: ', prediction)
-            debugger
             const predictionItem = await this.assessment.view(prediction.data.id)
-            console.log('========: ', predictionItem)
             const predictionScoreList = await this.assessment.getPredictionScoresById(predictionItem.data.id)
-            console.log('========: ', predictionScoreList)
 
             let listOptionData = []
             if (predictionScoreList.included) {
-              predictionScoreList.included.forEach(async score => {
+              for (let i = 0; i < predictionScoreList.included.length; i += 1) {
+                const score = predictionScoreList.included[i]
                 const scoreCategry = await this.assessment.getCategoryById(score.id)
                 if (scoreCategry.data) {
                   listOptionData.push({
@@ -460,10 +456,9 @@ export default {
                     description: scoreCategry.data.attributes.description
                   })
                 }
-
-              })
+              }
             }
-            debugger
+
             const questionMessage = {
               author: this.participants[0].id,
               data: {
@@ -564,7 +559,7 @@ export default {
       this.isChatOpen = false
     },
     async saveMessage (msg) {
-      console.log('------saveMesage ----------:', msg)
+
       this.messageList.push(msg)
 
       let sender = ''
